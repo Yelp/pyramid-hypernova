@@ -2,6 +2,7 @@
 *.py[co]
 /.cache
 /.coverage
+/.pytest_cache
 /.tox
 /coverage-html
 /dist
