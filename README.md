@@ -15,18 +15,18 @@ Install
 -------
 
 ```
-    pip install pyramid_hypernova
+pip install pyramid-hypernova
 ```
 
 Usage
 -----
 
-In your service's webapp, you can configure the Pyramid tween like so:
+In your service's Pyramid configuration (e.g. `webapp.py`), you can configure the Pyramid tween like so:
 
-```
-    def get_batch_url():
-        return 'https://localhost:8080/batch'
+```python
+def get_batch_url():
+    return 'https://localhost:8080/batch'
 
-    config.registry.settings['pyramid_hypernova.get_batch_url'] = get_batch_url
-    config.add_tween('pyramid_hypernova.tweens.hypernova_tween_factory')
+config.registry.settings['pyramid_hypernova.get_batch_url'] = get_batch_url
+config.add_tween('pyramid_hypernova.tweens.hypernova_tween_factory')
 ```
