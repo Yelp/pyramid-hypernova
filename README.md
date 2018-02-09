@@ -30,3 +30,10 @@ In your service's webapp, you can configure the Pyramid tween like so:
     config.registry.settings['pyramid_hypernova.get_batch_url'] = get_batch_url
     config.add_tween('pyramid_hypernova.tweens.hypernova_tween_factory')
 ```
+
+
+Contributors
+------------
+
+- [Matt Mulder](https://github.com/mxmul)
+- [Mark Larah](https://github.com/magicmark)
