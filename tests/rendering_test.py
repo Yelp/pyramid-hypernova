@@ -54,15 +54,15 @@ def test_render_blank_markup_with_error():
 
         <script type="text/javascript">
             (function () {
-                function CSRFallbackError(component) {
-                    this.name = 'CSRFallbackError';
+                function ServerSideRenderingError(component) {
+                    this.name = 'ServerSideRenderingError';
                     this.component = component;
                 }
 
-                CSRFallbackError.prototype = Object.create(CSRFallbackError.prototype);
-                CSRFallbackError.prototype.constructor = CSRFallbackError;
+                ServerSideRenderingError.prototype = Object.create(ServerSideRenderingError.prototype);
+                ServerSideRenderingError.prototype.constructor = ServerSideRenderingError;
 
-                throw new CSRFallbackError('MyCoolComponentjs')
+                throw new ServerSideRenderingError('MyCoolComponentjs failed to render server-side, and fell back to client-side rendering.');
             }());
         </script>
-    ''')
+    ''')  # noqa: ignore=E501

@@ -23,18 +23,18 @@ BLANK_MARKUP_TEMPLATE = dedent('''
 FALLBACK_ERROR = dedent('''
     <script type="text/javascript">
         (function () {{
-            function CSRFallbackError(component) {{
-                this.name = 'CSRFallbackError';
+            function ServerSideRenderingError(component) {{
+                this.name = 'ServerSideRenderingError';
                 this.component = component;
             }}
 
-            CSRFallbackError.prototype = Object.create(CSRFallbackError.prototype);
-            CSRFallbackError.prototype.constructor = CSRFallbackError;
+            ServerSideRenderingError.prototype = Object.create(ServerSideRenderingError.prototype);
+            ServerSideRenderingError.prototype.constructor = ServerSideRenderingError;
 
-            throw new CSRFallbackError('{component}')
+            throw new ServerSideRenderingError('{component} failed to render server-side, and fell back to client-side rendering.');
         }}());
     </script>
-''')
+''')  # noqa: ignore=E501
 
 
 def encode(data):
@@ -46,10 +46,7 @@ def encode(data):
 
 
 def render_blank_markup(identifier, job, throw_client_error):
-    """This will be called as a fallback when server-side rendering fails,
-    or when we deliberately do client side rendering, so that hypernova-react has
-    something to bind to.
-    """
+    """This will be called as a fallback when server-side rendering fails."""
     # Hypernova server strips out non-word characters from the name
     key = re.sub(r'\W', '', job.name)
     encoded_data = encode(job.data)
