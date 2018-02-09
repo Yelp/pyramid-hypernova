@@ -1,4 +1,4 @@
-pyramid_hypernova
+pyramid-hypernova
 --------------
 
 This project contains a [Pyramid](http://docs.pylonsproject.org/en/latest/docs/pyramid.html) tween that implements a client for Airbnb's [Hypernova](//github.com/airbnb/hypernova) service.
