@@ -37,3 +37,6 @@ Contributors
 
 - [Matt Mulder](https://github.com/mxmul)
 - [Mark Larah](https://github.com/magicmark)
+- [Chris Kuehl](https://github.com/chriskuehl)
+- [Francesco Agosti](https://github.com/fragosti)
+- [Jeffrey Xiao](https://github.com/jeffrey-xiao)
