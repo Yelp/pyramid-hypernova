@@ -1,7 +1,7 @@
 pyramid-hypernova
 --------------
 
-This project contains a [Pyramid](http://docs.pylonsproject.org/en/latest/docs/pyramid.html) tween that implements a client for Airbnb's [Hypernova](//github.com/airbnb/hypernova) service.
+A Python client for Airbnb's [Hypernova](//github.com/airbnb/hypernova) server, for use with the [Pyramid](http://docs.pylonsproject.org/en/latest/docs/pyramid.html) web framework.
 
 Features include:
 
