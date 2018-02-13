@@ -30,3 +30,13 @@ def get_batch_url():
 config.registry.settings['pyramid_hypernova.get_batch_url'] = get_batch_url
 config.add_tween('pyramid_hypernova.tweens.hypernova_tween_factory')
 ```
+
+
+Contributors
+------------
+
+- [Matt Mulder](https://github.com/mxmul)
+- [Mark Larah](https://github.com/magicmark)
+- [Chris Kuehl](https://github.com/chriskuehl)
+- [Francesco Agosti](https://github.com/fragosti)
+- [Jeffrey Xiao](https://github.com/jeffrey-xiao)
