@@ -9,6 +9,11 @@ from setuptools import setup
 setup(
     name='pyramid-hypernova',
     version='3.0.0',
+    author='Yelp, Inc.',
+    author_email='opensource+pyramid-hypernova@yelp.com',
+    license='Copyright Yelp 2018',
+    url='https://github.com/Yelp/pyramid-hypernova',
+    description="A Python client for Airbnb's Hypernova server, for use with the Pyramid web framework.",
     classifiers=[
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
