@@ -34,7 +34,7 @@ config.add_tween('pyramid_hypernova.tweens.hypernova_tween_factory')
 ```
 
 
-Contributors
+Original Contributors
 ------------
 
 - [Matt Mulder](https://github.com/mxmul)
