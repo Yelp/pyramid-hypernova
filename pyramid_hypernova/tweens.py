@@ -18,8 +18,14 @@ def hypernova_tween_factory(handler, registry):
         BatchRequest,
     )
 
+    json_encoder = registry.settings.get('pyramid_hypernova.json_encoder', None)
+
     def hypernova_tween(request):
-        request.hypernova_batch = batch_request_factory(get_batch_url(), plugin_controller)
+        request.hypernova_batch = batch_request_factory(
+            get_batch_url(),
+            plugin_controller,
+            json_encoder,
+        )
         response = handler(request)
 
         hypernova_response = request.hypernova_batch.submit()
