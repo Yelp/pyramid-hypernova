@@ -2,7 +2,6 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-import json
 import sys
 import traceback
 import uuid
@@ -154,7 +153,8 @@ class BatchRequest(object):
             futures = []
 
             for job_group in job_groups:
-                job_bytes = json.dumps(create_jobs_payload(job_group), cls=self.json_encoder).encode('utf-8')
+                job_str = self.json_encoder.encode(create_jobs_payload(job_group))
+                job_bytes = job_str.encode('utf-8')
                 futures.append(
                     fido.fetch(
                         url=self.batch_url,

@@ -3,7 +3,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import json
 import re
 from textwrap import dedent
 
@@ -38,7 +37,7 @@ FALLBACK_ERROR = dedent('''
 
 
 def encode(data, json_encoder):
-    text = json.dumps(data, cls=json_encoder)
+    text = json_encoder.encode(data)
     # NOTE: we don't escape all html characters, because hypernova.decode will
     # only resolve &amp; and &gt;. This should be safe though, because the
     # encoded JSON always appears within an HTML comment.
