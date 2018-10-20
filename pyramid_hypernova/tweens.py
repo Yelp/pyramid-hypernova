@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-import json
+from json import JSONEncoder
 
 from pyramid_hypernova.batch import BatchRequest
 from pyramid_hypernova.plugins import PluginController
@@ -20,7 +20,7 @@ def hypernova_tween_factory(handler, registry):
         BatchRequest,
     )
 
-    json_encoder = registry.settings.get('pyramid_hypernova.json_encoder', json.JSONEncoder)
+    json_encoder = registry.settings.get('pyramid_hypernova.json_encoder', JSONEncoder())
 
     def hypernova_tween(request):
         request.hypernova_batch = batch_request_factory(
