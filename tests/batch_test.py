@@ -2,6 +2,8 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+from json import JSONEncoder
+
 import mock
 import pytest
 from fido.exceptions import NetworkError
@@ -15,34 +17,48 @@ from pyramid_hypernova.rendering import render_blank_markup
 from pyramid_hypernova.types import HypernovaError
 from pyramid_hypernova.types import Job
 from pyramid_hypernova.types import JobResult
+from testing.json_encoder import ComplexJSONEncoder
+
+test_jobs = {
+    'some-unique-id': Job(
+        name='FooBar.js',
+        data={'baz': 1234},
+    ),
+    'some-other-unique-id': Job(
+        name='MyComponent.js',
+        data={'title': 'sup'},
+    ),
+}
+
+test_jobs_with_complex_numbers_in_data = {
+    'some-unique-id': Job(
+        name='FooBar.js',
+        data={'baz': 1 + 2j},
+    ),
+    'some-other-unique-id': Job(
+        name='MyComponent.js',
+        data={'title': 3 + 4j},
+    ),
+}
 
 
-@pytest.mark.parametrize('throw_client_error', [
-    True,
-    False,
+@pytest.mark.parametrize('jobs,throw_client_error,json_encoder', [
+    (test_jobs, True, JSONEncoder()),
+    (test_jobs, False, JSONEncoder()),
+    (test_jobs_with_complex_numbers_in_data, True, ComplexJSONEncoder()),
+    (test_jobs_with_complex_numbers_in_data, False, ComplexJSONEncoder()),
 ])
-def test_create_fallback_response(throw_client_error):
-    jobs = {
-        'some-unique-id': Job(
-            name='FooBar.js',
-            data={'baz': 1234},
-        ),
-        'some-other-unique-id': Job(
-            name='MyComponent.js',
-            data={'title': 'sup'},
-        ),
-    }
-
+def test_create_fallback_response(jobs, throw_client_error, json_encoder):
     expected_response = {
         identifier: JobResult(
             error=None,
-            html=render_blank_markup(identifier, job, throw_client_error),
+            html=render_blank_markup(identifier, job, throw_client_error, json_encoder),
             job=job,
         )
         for identifier, job in jobs.items()
     }
 
-    assert create_fallback_response(jobs, throw_client_error) == expected_response
+    assert create_fallback_response(jobs, throw_client_error, json_encoder) == expected_response
 
 
 def test_create_jobs_payload():
@@ -107,7 +123,7 @@ def spy_plugin_controller():
 
 @pytest.fixture(params=[None, 1, 2])
 def batch_request(spy_plugin_controller, request):
-    return BatchRequest('http://localhost:8888', spy_plugin_controller, max_batch_size=request.param)
+    return BatchRequest('http://localhost:8888', spy_plugin_controller, JSONEncoder(), max_batch_size=request.param)
 
 
 class TestBatchRequest(object):
@@ -233,7 +249,7 @@ class TestBatchRequest(object):
                     message='we goofed',
                     stack=['line 1', 'line 2'],
                 ),
-                html=render_blank_markup(token_2.identifier, job_2, True),
+                html=render_blank_markup(token_2.identifier, job_2, True, batch_request.json_encoder),
                 job=job_2,
             )
         }
@@ -269,7 +285,7 @@ class TestBatchRequest(object):
                     message='yikes',
                     stack=['line 1', 'line 2'],
                 ),
-                html=render_blank_markup(token.identifier, job, True),
+                html=render_blank_markup(token.identifier, job, True, batch_request.json_encoder),
                 job=job,
             ),
         }
@@ -297,7 +313,7 @@ class TestBatchRequest(object):
                     message='oh no',
                     stack=mock.ANY,
                 ),
-                html=render_blank_markup(token.identifier, job, True),
+                html=render_blank_markup(token.identifier, job, True, batch_request.json_encoder),
                 job=job,
             ),
         }

@@ -17,6 +17,21 @@ from pyramid_hypernova.types import Job
 from pyramid_hypernova.types import JobResult
 
 
+def create_fallback_response(jobs, throw_client_error, json_encoder, error=None):
+    """Create a response dict for falling back to client-side rendering.
+
+    :rtype: Dict[str, JobResult]
+    """
+    return {
+        identifier: JobResult(
+            error=error,
+            html=render_blank_markup(identifier, job, throw_client_error, json_encoder),
+            job=job,
+        )
+        for identifier, job in jobs.items()
+    }
+
+
 def create_jobs_payload(jobs):
     return {
         identifier: {'name': job.name, 'data': job.data}
@@ -45,7 +60,7 @@ class BatchRequest(object):
         self.batch_url = batch_url
         self.jobs = {}
         self.plugin_controller = plugin_controller
-        self.json_encoder = self.json_encoder
+        self.json_encoder = json_encoder
         self.max_batch_size = max_batch_size
 
     def render(self, name, data):
@@ -56,20 +71,6 @@ class BatchRequest(object):
         self.jobs[identifier] = job
 
         return RenderToken(identifier)
-
-    def _create_fallback_response(self, jobs, throw_client_error, error=None):
-        """Create a response dict for falling back to client-side rendering.
-
-        :rtype: Dict[str, JobResult]
-        """
-        return {
-            identifier: JobResult(
-                error=error,
-                html=render_blank_markup(identifier, job, throw_client_error, self.json_encoder),
-                job=job,
-            )
-            for identifier, job in jobs.items()
-        }
 
     def _parse_response(self, response_json):
         """Parse a raw JSON response into a response dict.
@@ -118,7 +119,7 @@ class BatchRequest(object):
                     message=response_json['error']['message'],
                     stack=response_json['error']['stack'],
                 )
-                response = self._create_fallback_response(jobs, True, error)
+                response = create_fallback_response(jobs, True, self.json_encoder, error)
                 self.plugin_controller.on_error(error, jobs)
             else:
                 response = self._parse_response(response_json)
@@ -134,7 +135,7 @@ class BatchRequest(object):
                 traceback.format_tb(exc_traceback),
             )
             self.plugin_controller.on_error(error, jobs)
-            response = self._create_fallback_response(jobs, True, error)
+            response = create_fallback_response(jobs, True, self.json_encoder, error)
 
         return response
 
@@ -171,7 +172,7 @@ class BatchRequest(object):
 
         else:
             # fall back to client-side rendering
-            response.update(self._create_fallback_response(self.jobs, True))
+            response.update(create_fallback_response(self.jobs, True, self.json_encoder))
 
         response = self.plugin_controller.after_response(response)
         return response
