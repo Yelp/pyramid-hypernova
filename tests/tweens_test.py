@@ -20,10 +20,13 @@ def test_tween_replaces_tokens():
     mock_batch_request_factory = mock.Mock()
     mock_get_batch_url = mock.Mock(return_value='http://localhost:8888/batch')
 
+    mock_json_encoder = mock.Mock()
+
     mock_registry = mock.Mock()
     mock_registry.settings = {
         'pyramid_hypernova.get_batch_url': mock_get_batch_url,
         'pyramid_hypernova.batch_request_factory': mock_batch_request_factory,
+        'pyramid_hypernova.json_encoder': mock_json_encoder,
     }
 
     tween = hypernova_tween_factory(mock_handler, mock_registry)
@@ -43,6 +46,7 @@ def test_tween_replaces_tokens():
     mock_batch_request_factory.assert_called_once_with(
         'http://localhost:8888/batch',
         mock.ANY,
+        mock_json_encoder,
     )
     assert mock_batch_request_factory.return_value.submit.called
     assert response.text == '<div>REACT!</div>'
