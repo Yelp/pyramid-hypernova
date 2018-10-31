@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 import sys
 import traceback
 import uuid
+from json import JSONEncoder
 
 import fido
 from fido.exceptions import NetworkError
@@ -56,12 +57,12 @@ def create_job_groups(jobs, max_batch_size):
 
 class BatchRequest(object):
 
-    def __init__(self, batch_url, plugin_controller, json_encoder, max_batch_size=None):
+    def __init__(self, batch_url, plugin_controller, max_batch_size=None, json_encoder=JSONEncoder()):
         self.batch_url = batch_url
         self.jobs = {}
         self.plugin_controller = plugin_controller
-        self.json_encoder = json_encoder
         self.max_batch_size = max_batch_size
+        self.json_encoder = json_encoder
 
     def render(self, name, data):
         identifier = str(uuid.uuid4())

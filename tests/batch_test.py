@@ -136,7 +136,12 @@ def test_data(request):
 @pytest.fixture(params=[None, 1, 2])
 def batch_request(spy_plugin_controller, test_data, request):
     json_encoder = ComplexJSONEncoder() if test_data[1] else JSONEncoder()
-    return BatchRequest('http://localhost:8888', spy_plugin_controller, json_encoder, max_batch_size=request.param)
+    return BatchRequest(
+        'http://localhost:8888',
+        spy_plugin_controller,
+        max_batch_size=request.param,
+        json_encoder=json_encoder,
+    )
 
 
 class TestBatchRequest(object):

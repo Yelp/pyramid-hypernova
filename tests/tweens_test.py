@@ -44,9 +44,9 @@ def test_tween_replaces_tokens():
     response = tween(mock_request)
 
     mock_batch_request_factory.assert_called_once_with(
-        'http://localhost:8888/batch',
-        mock.ANY,
-        mock_json_encoder,
+        batch_url='http://localhost:8888/batch',
+        plugin_controller=mock.ANY,
+        json_encoder=mock_json_encoder,
     )
     assert mock_batch_request_factory.return_value.submit.called
     assert response.text == '<div>REACT!</div>'

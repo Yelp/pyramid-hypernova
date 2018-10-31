@@ -24,9 +24,9 @@ def hypernova_tween_factory(handler, registry):
 
     def hypernova_tween(request):
         request.hypernova_batch = batch_request_factory(
-            get_batch_url(),
-            plugin_controller,
-            json_encoder,
+            batch_url=get_batch_url(),
+            plugin_controller=plugin_controller,
+            json_encoder=json_encoder,
         )
         response = handler(request)
 
