@@ -2,10 +2,10 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-import json
 import sys
 import traceback
 import uuid
+from json import JSONEncoder
 
 import fido
 from fido.exceptions import NetworkError
@@ -18,11 +18,15 @@ from pyramid_hypernova.types import Job
 from pyramid_hypernova.types import JobResult
 
 
-def create_fallback_response(jobs, throw_client_error, error=None):
+def create_fallback_response(jobs, throw_client_error, json_encoder, error=None):
+    """Create a response dict for falling back to client-side rendering.
+
+    :rtype: Dict[str, JobResult]
+    """
     return {
         identifier: JobResult(
             error=error,
-            html=render_blank_markup(identifier, job, throw_client_error),
+            html=render_blank_markup(identifier, job, throw_client_error, json_encoder),
             job=job,
         )
         for identifier, job in jobs.items()
@@ -53,11 +57,12 @@ def create_job_groups(jobs, max_batch_size):
 
 class BatchRequest(object):
 
-    def __init__(self, batch_url, plugin_controller, max_batch_size=None):
+    def __init__(self, batch_url, plugin_controller, max_batch_size=None, json_encoder=JSONEncoder()):
         self.batch_url = batch_url
         self.jobs = {}
         self.plugin_controller = plugin_controller
         self.max_batch_size = max_batch_size
+        self.json_encoder = json_encoder
 
     def render(self, name, data):
         identifier = str(uuid.uuid4())
@@ -88,7 +93,7 @@ class BatchRequest(object):
 
             html = result['html']
             if not html:
-                html = render_blank_markup(identifier, job, True)
+                html = render_blank_markup(identifier, job, True, self.json_encoder)
 
             response[identifier] = JobResult(error=error, html=html, job=job)
         return response
@@ -115,7 +120,7 @@ class BatchRequest(object):
                     message=response_json['error']['message'],
                     stack=response_json['error']['stack'],
                 )
-                response = create_fallback_response(jobs, True, error)
+                response = create_fallback_response(jobs, True, self.json_encoder, error)
                 self.plugin_controller.on_error(error, jobs)
             else:
                 response = self._parse_response(response_json)
@@ -131,7 +136,7 @@ class BatchRequest(object):
                 traceback.format_tb(exc_traceback),
             )
             self.plugin_controller.on_error(error, jobs)
-            response = create_fallback_response(jobs, True, error)
+            response = create_fallback_response(jobs, True, self.json_encoder, error)
 
         return response
 
@@ -150,7 +155,8 @@ class BatchRequest(object):
             futures = []
 
             for job_group in job_groups:
-                job_bytes = json.dumps(create_jobs_payload(job_group)).encode('utf-8')
+                job_str = self.json_encoder.encode(create_jobs_payload(job_group))
+                job_bytes = job_str.encode('utf-8')
                 futures.append(
                     fido.fetch(
                         url=self.batch_url,
@@ -167,7 +173,7 @@ class BatchRequest(object):
 
         else:
             # fall back to client-side rendering
-            response.update(create_fallback_response(self.jobs, True))
+            response.update(create_fallback_response(self.jobs, True, self.json_encoder))
 
         response = self.plugin_controller.after_response(response)
         return response

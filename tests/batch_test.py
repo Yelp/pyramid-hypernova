@@ -2,6 +2,8 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+from json import JSONEncoder
+
 import mock
 import pytest
 from fido.exceptions import NetworkError
@@ -15,34 +17,50 @@ from pyramid_hypernova.rendering import render_blank_markup
 from pyramid_hypernova.types import HypernovaError
 from pyramid_hypernova.types import Job
 from pyramid_hypernova.types import JobResult
+from testing.json_encoder import ComplexJSONEncoder
+
+test_jobs = {
+    'some-unique-id': Job(
+        name='FooBar.js',
+        data={'baz': 1234},
+    ),
+    'some-other-unique-id': Job(
+        name='MyComponent.js',
+        data={'title': 'sup'},
+    ),
+}
+
+test_jobs_with_complex_numbers_in_data = {
+    'some-unique-id': Job(
+        name='FooBar.js',
+        data={'baz': 1 + 2j},
+    ),
+    'some-other-unique-id': Job(
+        name='MyComponent.js',
+        data={'title': 3 + 4j},
+    ),
+}
 
 
-@pytest.mark.parametrize('throw_client_error', [
-    True,
-    False,
+@pytest.mark.parametrize('jobs,throw_client_error,json_encoder', [
+    (test_jobs, True, JSONEncoder()),
+    (test_jobs, False, JSONEncoder()),
+    (test_jobs, True, ComplexJSONEncoder()),
+    (test_jobs, False, ComplexJSONEncoder()),
+    (test_jobs_with_complex_numbers_in_data, True, ComplexJSONEncoder()),
+    (test_jobs_with_complex_numbers_in_data, False, ComplexJSONEncoder()),
 ])
-def test_create_fallback_response(throw_client_error):
-    jobs = {
-        'some-unique-id': Job(
-            name='FooBar.js',
-            data={'baz': 1234},
-        ),
-        'some-other-unique-id': Job(
-            name='MyComponent.js',
-            data={'title': 'sup'},
-        ),
-    }
-
+def test_create_fallback_response(jobs, throw_client_error, json_encoder):
     expected_response = {
         identifier: JobResult(
             error=None,
-            html=render_blank_markup(identifier, job, throw_client_error),
+            html=render_blank_markup(identifier, job, throw_client_error, json_encoder),
             job=job,
         )
         for identifier, job in jobs.items()
     }
 
-    assert create_fallback_response(jobs, throw_client_error) == expected_response
+    assert create_fallback_response(jobs, throw_client_error, json_encoder) == expected_response
 
 
 def test_create_jobs_payload():
@@ -105,29 +123,46 @@ def spy_plugin_controller():
     return mock.Mock(wraps=plugin_controller)
 
 
+@pytest.fixture(params=[
+    # (data, use_complex_json_encoder)
+    ([{'key-1': 'value-1'}, {'key-2': 'value-2'}, {'key-3': 'value-3'}], False),
+    ([{'key-1': 'value-1'}, {'key-2': 'value-2'}, {'key-3': 'value-3'}], True),
+    ([{'key-1': 1 + 2j}, {'key-2': 3 + 4j}, {'key-3': 5 + 6j}], True),
+])
+def test_data(request):
+    return request.param
+
+
 @pytest.fixture(params=[None, 1, 2])
-def batch_request(spy_plugin_controller, request):
-    return BatchRequest('http://localhost:8888', spy_plugin_controller, max_batch_size=request.param)
+def batch_request(spy_plugin_controller, test_data, request):
+    json_encoder = ComplexJSONEncoder() if test_data[1] else JSONEncoder()
+    return BatchRequest(
+        'http://localhost:8888',
+        spy_plugin_controller,
+        max_batch_size=request.param,
+        json_encoder=json_encoder,
+    )
 
 
 class TestBatchRequest(object):
 
-    def test_successful_batch_request(self, spy_plugin_controller, batch_request):
-        token_1 = batch_request.render('component-1.js', {'key-1': 'value-1'})
-        token_2 = batch_request.render('component-2.js', {'key-2': 'value-2'})
-        token_3 = batch_request.render('component-3.js', {'key-3': 'value-3'})
+    def test_successful_batch_request(self, spy_plugin_controller, test_data, batch_request):
+        data = test_data[0]
+        token_1 = batch_request.render('component-1.js', data[0])
+        token_2 = batch_request.render('component-2.js', data[1])
+        token_3 = batch_request.render('component-3.js', data[2])
         assert batch_request.jobs == {
             token_1.identifier: Job(
                 name='component-1.js',
-                data={'key-1': 'value-1'},
+                data=data[0],
             ),
             token_2.identifier: Job(
                 name='component-2.js',
-                data={'key-2': 'value-2'},
+                data=data[1],
             ),
             token_3.identifier: Job(
                 name='component-3.js',
-                data={'key-3': 'value-3'},
+                data=data[2],
             ),
         }
 
@@ -165,17 +200,17 @@ class TestBatchRequest(object):
             token_1.identifier: JobResult(
                 error=None,
                 html='<div>component 1</div>',
-                job=Job(name='component-1.js', data={'key-1': 'value-1'})
+                job=Job(name='component-1.js', data=data[0])
             ),
             token_2.identifier: JobResult(
                 error=None,
                 html='<div>component 2</div>',
-                job=Job(name='component-2.js', data={'key-2': 'value-2'})
+                job=Job(name='component-2.js', data=data[1])
             ),
             token_3.identifier: JobResult(
                 error=None,
                 html='<div>component 3</div>',
-                job=Job(name='component-3.js', data={'key-3': 'value-3'})
+                job=Job(name='component-3.js', data=data[2])
             ),
         }
 
@@ -186,10 +221,11 @@ class TestBatchRequest(object):
         assert not mock_fetch.called
         assert response == {}
 
-    def test_batch_request_with_component_errors(self, spy_plugin_controller, batch_request):
-        token_1 = batch_request.render('MyComponent1.js', {'foo': 'bar'})
-        token_2 = batch_request.render('MyComponent2.js', {'foo': 'baz'})
-        job_2 = Job(name='MyComponent2.js', data={'foo': 'baz'})
+    def test_batch_request_with_component_errors(self, spy_plugin_controller, test_data, batch_request):
+        data = test_data[0]
+        token_1 = batch_request.render('MyComponent1.js', data[0])
+        token_2 = batch_request.render('MyComponent2.js', data[1])
+        job_2 = Job(name='MyComponent2.js', data=data[1])
 
         fake_response_json = {
             'error': None,
@@ -225,7 +261,7 @@ class TestBatchRequest(object):
             token_1.identifier: JobResult(
                 error=None,
                 html='<div>wow such SSR</div>',
-                job=Job(name='MyComponent1.js', data={'foo': 'bar'})
+                job=Job(name='MyComponent1.js', data=data[0])
             ),
             token_2.identifier: JobResult(
                 error=HypernovaError(
@@ -233,14 +269,15 @@ class TestBatchRequest(object):
                     message='we goofed',
                     stack=['line 1', 'line 2'],
                 ),
-                html=render_blank_markup(token_2.identifier, job_2, True),
+                html=render_blank_markup(token_2.identifier, job_2, True, batch_request.json_encoder),
                 job=job_2,
             )
         }
 
-    def test_batch_request_with_application_error(self, spy_plugin_controller, batch_request):
-        job = Job(name='MyComponent.js', data={'foo': 'bar'})
-        token = batch_request.render('MyComponent.js', {'foo': 'bar'})
+    def test_batch_request_with_application_error(self, spy_plugin_controller, test_data, batch_request):
+        data = test_data[0]
+        job = Job(name='MyComponent.js', data=data[0])
+        token = batch_request.render('MyComponent.js', data[0])
 
         fake_response_json = {
             'error': {
@@ -269,14 +306,15 @@ class TestBatchRequest(object):
                     message='yikes',
                     stack=['line 1', 'line 2'],
                 ),
-                html=render_blank_markup(token.identifier, job, True),
+                html=render_blank_markup(token.identifier, job, True, batch_request.json_encoder),
                 job=job,
             ),
         }
 
-    def test_batch_request_with_unhealthy_service(self, spy_plugin_controller, batch_request):
-        job = Job(name='MyComponent.js', data={'foo': 'bar'})
-        token = batch_request.render('MyComponent.js', {'foo': 'bar'})
+    def test_batch_request_with_unhealthy_service(self, spy_plugin_controller, test_data, batch_request):
+        data = test_data[0]
+        job = Job(name='MyComponent.js', data=data[0])
+        token = batch_request.render('MyComponent.js', data[0])
 
         with mock.patch('fido.fetch') as mock_fetch:
             mock_fetch.return_value.wait.return_value.json.side_effect = NetworkError('oh no')
@@ -297,7 +335,7 @@ class TestBatchRequest(object):
                     message='oh no',
                     stack=mock.ANY,
                 ),
-                html=render_blank_markup(token.identifier, job, True),
+                html=render_blank_markup(token.identifier, job, True, batch_request.json_encoder),
                 job=job,
             ),
         }
@@ -308,23 +346,25 @@ class TestBatchRequestLifecycleMethods(object):
     appropriate times.
     """
 
-    def test_calls_get_view_data(self, spy_plugin_controller, batch_request):
-        token = batch_request.render('MyComponent.js', {'foo': 'bar'})
+    def test_calls_get_view_data(self, spy_plugin_controller, test_data, batch_request):
+        data = test_data[0]
+        token = batch_request.render('MyComponent.js', data[0])
 
         spy_plugin_controller.get_view_data.assert_called_once_with(
             'MyComponent.js',
-            {'foo': 'bar'},
+            data[0],
         )
 
         job = batch_request.jobs[token.identifier]
 
         assert job.data == spy_plugin_controller.get_view_data(
             'MyComponent.js',
-            {'foo': 'bar'},
+            data[0],
         )
 
-    def test_calls_prepare_request(self, spy_plugin_controller, batch_request):
-        batch_request.render('MySsrComponent.js', {'foo': 'bar'})
+    def test_calls_prepare_request(self, spy_plugin_controller, test_data, batch_request):
+        data = test_data[0]
+        batch_request.render('MySsrComponent.js', data[0])
 
         original_jobs = dict(batch_request.jobs)
 
@@ -339,8 +379,9 @@ class TestBatchRequestLifecycleMethods(object):
             original_jobs
         )
 
-    def test_calls_will_send_request(self, spy_plugin_controller, batch_request):
-        batch_request.render('MySsrComponent.js', {'foo': 'bar'})
+    def test_calls_will_send_request(self, spy_plugin_controller, test_data, batch_request):
+        data = test_data[0]
+        batch_request.render('MySsrComponent.js', data[0])
 
         with mock.patch('fido.fetch'):
             batch_request.submit()
@@ -349,8 +390,9 @@ class TestBatchRequestLifecycleMethods(object):
             mock.call(batch_request.jobs),
         ])
 
-    def test_calls_after_response(self, spy_plugin_controller, batch_request):
-        ssr_token = batch_request.render('MySsrComponent.js', {'foo': 'bar'})
+    def test_calls_after_response(self, spy_plugin_controller, test_data, batch_request):
+        data = test_data[0]
+        ssr_token = batch_request.render('MySsrComponent.js', data[0])
 
         fake_response_json = {
             'error': None,
@@ -378,8 +420,9 @@ class TestBatchRequestLifecycleMethods(object):
 
         assert response == spy_plugin_controller.after_response(parsed_response)
 
-    def test_calls_on_success(self, spy_plugin_controller, batch_request):
-        ssr_token = batch_request.render('MySsrComponent.js', {'foo': 'bar'})
+    def test_calls_on_success(self, spy_plugin_controller, test_data, batch_request):
+        data = test_data[0]
+        ssr_token = batch_request.render('MySsrComponent.js', data[0])
 
         fake_response_json = {
             'error': None,
@@ -400,8 +443,9 @@ class TestBatchRequestLifecycleMethods(object):
             batch_request.jobs,
         )
 
-    def test_calls_on_error(self, spy_plugin_controller, batch_request):
-        batch_request.render('MyComponent.js', {'foo': 'bar'})
+    def test_calls_on_error(self, spy_plugin_controller, test_data, batch_request):
+        data = test_data[0]
+        batch_request.render('MyComponent.js', data[0])
 
         fake_response_json = {
             'error': {
@@ -424,8 +468,9 @@ class TestBatchRequestLifecycleMethods(object):
             batch_request.jobs,
         )
 
-    def test_calls_on_error_on_unhealthy_service(self, spy_plugin_controller, batch_request):
-        batch_request.render('MyComponent.js', {'foo': 'bar'})
+    def test_calls_on_error_on_unhealthy_service(self, spy_plugin_controller, test_data, batch_request):
+        data = test_data[0]
+        batch_request.render('MyComponent.js', data[0])
 
         with mock.patch(
             'fido.fetch'

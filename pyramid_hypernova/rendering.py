@@ -3,7 +3,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import json
 import re
 from textwrap import dedent
 
@@ -37,19 +36,19 @@ FALLBACK_ERROR = dedent('''
 ''')  # noqa: ignore=E501
 
 
-def encode(data):
-    text = json.dumps(data)
+def encode(data, json_encoder):
+    text = json_encoder.encode(data)
     # NOTE: we don't escape all html characters, because hypernova.decode will
     # only resolve &amp; and &gt;. This should be safe though, because the
     # encoded JSON always appears within an HTML comment.
     return text.replace('&', '&amp;').replace('>', '&gt;')
 
 
-def render_blank_markup(identifier, job, throw_client_error):
+def render_blank_markup(identifier, job, throw_client_error, json_encoder):
     """This will be called as a fallback when server-side rendering fails."""
     # Hypernova server strips out non-word characters from the name
     key = re.sub(r'\W', '', job.name)
-    encoded_data = encode(job.data)
+    encoded_data = encode(job.data, json_encoder)
     blank_markup = BLANK_MARKUP_TEMPLATE.format(
         key=key,
         identifier=identifier,
