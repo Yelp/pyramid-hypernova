@@ -7,15 +7,16 @@ import traceback
 import uuid
 from json import JSONEncoder
 
-import fido
-from fido.exceptions import NetworkError
 from more_itertools import chunked
+import os
 
 from pyramid_hypernova.rendering import render_blank_markup
 from pyramid_hypernova.rendering import RenderToken
 from pyramid_hypernova.types import HypernovaError
 from pyramid_hypernova.types import Job
 from pyramid_hypernova.types import JobResult
+from pyramid_hypernova.request import HypernovaQuery
+from pyramid_hypernova.request import HypernovaQueryError
 
 
 def create_fallback_response(jobs, throw_client_error, json_encoder, error=None):
@@ -29,13 +30,6 @@ def create_fallback_response(jobs, throw_client_error, json_encoder, error=None)
             html=render_blank_markup(identifier, job, throw_client_error, json_encoder),
             job=job,
         )
-        for identifier, job in jobs.items()
-    }
-
-
-def create_jobs_payload(jobs):
-    return {
-        identifier: {'name': job.name, 'data': job.data}
         for identifier, job in jobs.items()
     }
 
@@ -98,35 +92,34 @@ class BatchRequest(object):
             response[identifier] = JobResult(error=error, html=html, job=job)
         return response
 
-    def process_responses(self, future, jobs):
+    def process_responses(self, query, jobs):
         """Retrieve response from EventualResponse object and calls
         lifecycle methods for corresponding jobs.
 
-        :param future: a future for the HTTP request to render `jobs`
-        :type future: EventualResult
+        :param query: a HypernovaQuery object
+        :type query: HypernovaQuery
         :type jobs: Dict[str, Job]
 
         :rtype: Dict[str, JobResult]
         """
 
-        response = {}
+        pyramid_response = {}
 
         try:
-            r = future.wait()
-            response_json = r.json()
+            response_json = query.json()
             if response_json['error']:
                 error = HypernovaError(
                     name=response_json['error']['name'],
                     message=response_json['error']['message'],
                     stack=response_json['error']['stack'],
                 )
-                response = create_fallback_response(jobs, True, self.json_encoder, error)
+                pyramid_response = create_fallback_response(jobs, True, self.json_encoder, error)
                 self.plugin_controller.on_error(error, jobs)
             else:
-                response = self._parse_response(response_json)
-                self.plugin_controller.on_success(response, jobs)
+                pyramid_response = self._parse_response(response_json)
+                self.plugin_controller.on_success(query, jobs)
 
-        except (NetworkError, ValueError) as e:
+        except (HypernovaQueryError, ValueError) as e:
             # the service is unhealthy. fall back to client-side rendering
             __, __, exc_traceback = sys.exc_info()
 
@@ -136,9 +129,9 @@ class BatchRequest(object):
                 traceback.format_tb(exc_traceback),
             )
             self.plugin_controller.on_error(error, jobs)
-            response = create_fallback_response(jobs, True, self.json_encoder, error)
+            pyramid_response = create_fallback_response(jobs, True, self.json_encoder, error)
 
-        return response
+        return pyramid_response
 
     def submit(self):
         """Submit the Hypernova jobs as batches with a max size of self.max_batch_size.
@@ -152,24 +145,19 @@ class BatchRequest(object):
         if self.jobs and self.plugin_controller.should_send_request(self.jobs):
             self.plugin_controller.will_send_request(self.jobs)
             job_groups = create_job_groups(self.jobs, self.max_batch_size)
-            futures = []
+            queries = []
 
             for job_group in job_groups:
-                job_str = self.json_encoder.encode(create_jobs_payload(job_group))
-                job_bytes = job_str.encode('utf-8')
-                futures.append(
-                    fido.fetch(
-                        url=self.batch_url,
-                        headers={
-                            'Content-Type': ['application/json'],
-                        },
-                        method='POST',
-                        body=job_bytes,
-                    )
-                )
+                # Fido is asynchronous and Python2.7 is bad at asynchronous, incurring 10-30ms of overhead
+                # when calling and immediately waiting on an HTTP request. If we only have one request to
+                # make, use synchronous Requests instead to save a little time.
+                synchronous = len(job_groups) == 1
+                query = HypernovaQuery(job_group, self.batch_url, self.json_encoder, synchronous)
+                query.send()
+                queries.append(query)
 
-            for job_group, future in zip(job_groups, futures):
-                response.update(self.process_responses(future, job_group))
+            for query in queries:
+                response.update(self.process_responses(query, query.job_group))
 
         else:
             # fall back to client-side rendering

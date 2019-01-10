@@ -24,6 +24,7 @@ setup(
     install_requires=[
         'fido',
         'more-itertools',
+        'requests',
     ],
     packages=find_packages(exclude=('tests*', 'testing*')),
 )
