@@ -8,7 +8,6 @@ import uuid
 from json import JSONEncoder
 
 from more_itertools import chunked
-import os
 
 from pyramid_hypernova.rendering import render_blank_markup
 from pyramid_hypernova.rendering import RenderToken
