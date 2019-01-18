@@ -331,7 +331,7 @@ class TestBatchRequest(object):
         assert response == {
             token.identifier: JobResult(
                 error=HypernovaError(
-                    name="<class 'fido.exceptions.NetworkError'>",
+                    name='NetworkError',
                     message='oh no',
                     stack=mock.ANY,
                 ),
@@ -475,16 +475,20 @@ class TestBatchRequestLifecycleMethods(object):
         with mock.patch(
             'fido.fetch'
         ) as mock_fetch, mock.patch(
-            'traceback.format_tb'
-        ) as mock_format_tb:
+            'traceback.format_tb',
+            return_value=[
+                'Traceback:\n',
+                '  foo:\n',
+            ],
+        ):
             mock_fetch.return_value.wait.return_value.json.side_effect = NetworkError('oh no')
             batch_request.submit()
 
         spy_plugin_controller.on_error.assert_called_once_with(
             HypernovaError(
-                name="<class 'fido.exceptions.NetworkError'>",
+                name='NetworkError',
                 message='oh no',
-                stack=mock_format_tb.return_value,
+                stack=['Traceback:', '  foo:'],
             ),
             batch_request.jobs,
         )
