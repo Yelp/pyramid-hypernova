@@ -8,7 +8,7 @@ from setuptools import setup
 
 setup(
     name='pyramid-hypernova',
-    version='3.1.0',
+    version='3.2.0',
     author='Yelp, Inc.',
     author_email='opensource+pyramid-hypernova@yelp.com',
     license='MIT',

@@ -123,9 +123,9 @@ class BatchRequest(object):
             __, __, exc_traceback = sys.exc_info()
 
             error = HypernovaError(
-                repr(type(e)),
+                type(e).__name__,
                 str(e),
-                traceback.format_tb(exc_traceback),
+                [line.rstrip('\n') for line in traceback.format_tb(exc_traceback)],
             )
             self.plugin_controller.on_error(error, jobs)
             pyramid_response = create_fallback_response(jobs, True, self.json_encoder, error)

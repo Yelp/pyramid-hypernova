@@ -327,7 +327,7 @@ class TestBatchRequest(object):
         assert response == {
             token.identifier: JobResult(
                 error=HypernovaError(
-                    name="<class 'pyramid_hypernova.request.HypernovaQueryError'>",
+                    name='HypernovaQueryError',
                     message='oh no',
                     stack=mock.ANY,
                 ),
@@ -469,15 +469,21 @@ class TestBatchRequestLifecycleMethods(object):
         data = test_data[0]
         batch_request.render('MyComponent.js', data[0])
 
-        with mock.patch('traceback.format_tb') as mock_format_tb:
+        with mock.patch(
+            'traceback.format_tb',
+            return_value=[
+                'Traceback:\n',
+                '  foo:\n',
+            ],
+        ):
             mock_hypernova_query.return_value.json.side_effect = HypernovaQueryError('oh no')
             batch_request.submit()
 
         spy_plugin_controller.on_error.assert_called_once_with(
             HypernovaError(
-                name="<class 'pyramid_hypernova.request.HypernovaQueryError'>",
+                name='HypernovaQueryError',
                 message='oh no',
-                stack=mock_format_tb.return_value,
+                stack=['Traceback:', '  foo:'],
             ),
             batch_request.jobs,
         )
