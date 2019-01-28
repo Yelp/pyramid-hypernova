@@ -11,17 +11,17 @@ from more_itertools import chunked
 
 from pyramid_hypernova.rendering import render_blank_markup
 from pyramid_hypernova.rendering import RenderToken
+from pyramid_hypernova.request import HypernovaQuery
+from pyramid_hypernova.request import HypernovaQueryError
 from pyramid_hypernova.types import HypernovaError
 from pyramid_hypernova.types import Job
 from pyramid_hypernova.types import JobResult
-from pyramid_hypernova.request import HypernovaQuery
-from pyramid_hypernova.request import HypernovaQueryError
 
 
 def create_fallback_response(jobs, throw_client_error, json_encoder, error=None):
     """Create a response dict for falling back to client-side rendering.
 
-    :rtype: Dict[str, JobResult]
+    :rtype: Dict[str, Job]
     """
     return {
         identifier: JobResult(
@@ -116,7 +116,7 @@ class BatchRequest(object):
                 self.plugin_controller.on_error(error, jobs)
             else:
                 pyramid_response = self._parse_response(response_json)
-                self.plugin_controller.on_success(query, jobs)
+                self.plugin_controller.on_success(pyramid_response, jobs)
 
         except (HypernovaQueryError, ValueError) as e:
             # the service is unhealthy. fall back to client-side rendering
@@ -153,10 +153,10 @@ class BatchRequest(object):
                 synchronous = len(job_groups) == 1
                 query = HypernovaQuery(job_group, self.batch_url, self.json_encoder, synchronous)
                 query.send()
-                queries.append(query)
+                queries.append((job_group, query))
 
-            for query in queries:
-                response.update(self.process_responses(query, query.job_group))
+            for job_group, query in queries:
+                response.update(self.process_responses(query, job_group))
 
         else:
             # fall back to client-side rendering

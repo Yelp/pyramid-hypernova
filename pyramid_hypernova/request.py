@@ -3,9 +3,10 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import fido
-from fido.exceptions import NetworkError
 import requests
+from fido.exceptions import NetworkError
 from requests.exceptions import HTTPError
+
 
 def create_jobs_payload(jobs):
     return {
@@ -13,16 +14,19 @@ def create_jobs_payload(jobs):
         for identifier, job in jobs.items()
     }
 
+
 class HypernovaQueryError(Exception):
     def __init__(self, child_error):
         super(HypernovaQueryError, self).__init__(str(child_error))
 
+
 class HypernovaQuery(object):
     """ Abstract Hypernova query """
+
     def __init__(self, job_group, url, json_encoder, synchronous):
         """
         Build a Hypernova query.
-        :param job_group: A job group (see create_job_groups in batch.py)
+        :param job_group: A job group (see create_job_groups)
         :param url: the URL of the Hypernova server we should query
         :param json_encoder: A JSON encoder to encode the query with
         :param synchronous: True to synchronously query CRS (faster), False to
