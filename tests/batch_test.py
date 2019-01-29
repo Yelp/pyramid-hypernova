@@ -6,14 +6,13 @@ from json import JSONEncoder
 
 import mock
 import pytest
-from fido.exceptions import NetworkError
 
 from pyramid_hypernova.batch import BatchRequest
 from pyramid_hypernova.batch import create_fallback_response
 from pyramid_hypernova.batch import create_job_groups
-from pyramid_hypernova.batch import create_jobs_payload
 from pyramid_hypernova.plugins import PluginController
 from pyramid_hypernova.rendering import render_blank_markup
+from pyramid_hypernova.request import HypernovaQueryError
 from pyramid_hypernova.types import HypernovaError
 from pyramid_hypernova.types import Job
 from pyramid_hypernova.types import JobResult
@@ -61,36 +60,6 @@ def test_create_fallback_response(jobs, throw_client_error, json_encoder):
     }
 
     assert create_fallback_response(jobs, throw_client_error, json_encoder) == expected_response
-
-
-def test_create_jobs_payload():
-    jobs = {
-        'some-unique-id': Job(
-            name='FooBar.js',
-            data={'baz': 1234},
-        ),
-        'some-other-unique-id': Job(
-            name='MyComponent.js',
-            data={'title': 'sup'},
-        ),
-    }
-
-    expected_result = {
-        'some-unique-id': {
-            'name': 'FooBar.js',
-            'data': {
-                'baz': 1234,
-            },
-        },
-        'some-other-unique-id': {
-            'name': 'MyComponent.js',
-            'data': {
-                'title': 'sup',
-            },
-        },
-    }
-
-    assert create_jobs_payload(jobs) == expected_result
 
 
 @pytest.mark.parametrize('max_batch_size,expected', [
@@ -144,9 +113,15 @@ def batch_request(spy_plugin_controller, test_data, request):
     )
 
 
+@pytest.fixture
+def mock_hypernova_query():
+    with mock.patch('pyramid_hypernova.batch.HypernovaQuery') as mock_hypernova_query:
+        yield mock_hypernova_query
+
+
 class TestBatchRequest(object):
 
-    def test_successful_batch_request(self, spy_plugin_controller, test_data, batch_request):
+    def test_successful_batch_request(self, spy_plugin_controller, test_data, batch_request, mock_hypernova_query):
         data = test_data[0]
         token_1 = batch_request.render('component-1.js', data[0])
         token_2 = batch_request.render('component-2.js', data[1])
@@ -184,17 +159,18 @@ class TestBatchRequest(object):
             }
         }
 
-        with mock.patch('fido.fetch') as mock_fetch:
-            mock_fetch.return_value.wait.return_value.json.return_value = fake_response_json
-            response = batch_request.submit()
+        mock_hypernova_query.return_value.json.return_value = fake_response_json
+        response = batch_request.submit()
 
         if batch_request.max_batch_size is None:
-            assert mock_fetch.call_count == 1
+            assert mock_hypernova_query.call_count == 1
         else:
             # Division (rounded-up) up to get total number of calls
             jobs_count = len(batch_request.jobs)
             max_batch_size = batch_request.max_batch_size
-            assert mock_fetch.call_count == (jobs_count + (max_batch_size - 1)) // max_batch_size
+            batch_count = (jobs_count + (max_batch_size - 1)) // max_batch_size
+            assert mock_hypernova_query.call_count == batch_count
+            mock_hypernova_query.assert_called_with(mock.ANY, mock.ANY, mock.ANY, batch_count == 1)
 
         assert response == {
             token_1.identifier: JobResult(
@@ -214,14 +190,19 @@ class TestBatchRequest(object):
             ),
         }
 
-    def test_batch_request_with_no_jobs_doesnt_post(self, spy_plugin_controller, batch_request):
-        with mock.patch('fido.fetch') as mock_fetch:
-            response = batch_request.submit()
+    def test_batch_request_with_no_jobs_doesnt_post(self, spy_plugin_controller, batch_request, mock_hypernova_query):
+        response = batch_request.submit()
 
-        assert not mock_fetch.called
+        assert not mock_hypernova_query.called
         assert response == {}
 
-    def test_batch_request_with_component_errors(self, spy_plugin_controller, test_data, batch_request):
+    def test_batch_request_with_component_errors(
+        self,
+        spy_plugin_controller,
+        test_data,
+        batch_request,
+        mock_hypernova_query,
+    ):
         data = test_data[0]
         token_1 = batch_request.render('MyComponent1.js', data[0])
         token_2 = batch_request.render('MyComponent2.js', data[1])
@@ -245,17 +226,18 @@ class TestBatchRequest(object):
             }
         }
 
-        with mock.patch('fido.fetch') as mock_fetch:
-            mock_fetch.return_value.wait.return_value.json.return_value = fake_response_json
-            response = batch_request.submit()
+        mock_hypernova_query.return_value.json.return_value = fake_response_json
+        response = batch_request.submit()
 
         if batch_request.max_batch_size is None:
-            assert mock_fetch.call_count == 1
+            assert mock_hypernova_query.call_count == 1
         else:
             # Division (rounded-up) up to get total number of calls
             jobs_count = len(batch_request.jobs)
             max_batch_size = batch_request.max_batch_size
-            assert mock_fetch.call_count == (jobs_count + (max_batch_size - 1)) // max_batch_size
+            batch_count = (jobs_count + (max_batch_size - 1)) // max_batch_size
+            assert mock_hypernova_query.call_count == batch_count
+            mock_hypernova_query.assert_called_with(mock.ANY, mock.ANY, mock.ANY, batch_count == 1)
 
         assert response == {
             token_1.identifier: JobResult(
@@ -274,7 +256,13 @@ class TestBatchRequest(object):
             )
         }
 
-    def test_batch_request_with_application_error(self, spy_plugin_controller, test_data, batch_request):
+    def test_batch_request_with_application_error(
+        self,
+        spy_plugin_controller,
+        test_data,
+        batch_request,
+        mock_hypernova_query,
+    ):
         data = test_data[0]
         job = Job(name='MyComponent.js', data=data[0])
         token = batch_request.render('MyComponent.js', data[0])
@@ -287,17 +275,18 @@ class TestBatchRequest(object):
             }
         }
 
-        with mock.patch('fido.fetch') as mock_fetch:
-            mock_fetch.return_value.wait.return_value.json.return_value = fake_response_json
-            response = batch_request.submit()
+        mock_hypernova_query.return_value.json.return_value = fake_response_json
+        response = batch_request.submit()
 
         if batch_request.max_batch_size is None:
-            assert mock_fetch.call_count == 1
+            assert mock_hypernova_query.call_count == 1
         else:
             # Division (rounded-up) up to get total number of calls
             jobs_count = len(batch_request.jobs)
             max_batch_size = batch_request.max_batch_size
-            assert mock_fetch.call_count == (jobs_count + (max_batch_size - 1)) // max_batch_size
+            batch_count = (jobs_count + (max_batch_size - 1)) // max_batch_size
+            assert mock_hypernova_query.call_count == batch_count
+            mock_hypernova_query.assert_called_with(mock.ANY, mock.ANY, mock.ANY, batch_count == 1)
 
         assert response == {
             token.identifier: JobResult(
@@ -311,27 +300,34 @@ class TestBatchRequest(object):
             ),
         }
 
-    def test_batch_request_with_unhealthy_service(self, spy_plugin_controller, test_data, batch_request):
+    def test_batch_request_with_unhealthy_service(
+        self,
+        spy_plugin_controller,
+        test_data,
+        batch_request,
+        mock_hypernova_query,
+    ):
         data = test_data[0]
         job = Job(name='MyComponent.js', data=data[0])
         token = batch_request.render('MyComponent.js', data[0])
 
-        with mock.patch('fido.fetch') as mock_fetch:
-            mock_fetch.return_value.wait.return_value.json.side_effect = NetworkError('oh no')
-            response = batch_request.submit()
+        mock_hypernova_query.return_value.json.side_effect = HypernovaQueryError('oh no')
+        response = batch_request.submit()
 
         if batch_request.max_batch_size is None:
-            assert mock_fetch.call_count == 1
+            assert mock_hypernova_query.call_count == 1
         else:
             # Division (rounded-up) up to get total number of calls
             jobs_count = len(batch_request.jobs)
             max_batch_size = batch_request.max_batch_size
-            assert mock_fetch.call_count == (jobs_count + (max_batch_size - 1)) // max_batch_size
+            batch_count = (jobs_count + (max_batch_size - 1)) // max_batch_size
+            assert mock_hypernova_query.call_count == batch_count
+            mock_hypernova_query.assert_called_with(mock.ANY, mock.ANY, mock.ANY, batch_count == 1)
 
         assert response == {
             token.identifier: JobResult(
                 error=HypernovaError(
-                    name='NetworkError',
+                    name='HypernovaQueryError',
                     message='oh no',
                     stack=mock.ANY,
                 ),
@@ -362,14 +358,13 @@ class TestBatchRequestLifecycleMethods(object):
             data[0],
         )
 
-    def test_calls_prepare_request(self, spy_plugin_controller, test_data, batch_request):
+    def test_calls_prepare_request(self, spy_plugin_controller, test_data, batch_request, mock_hypernova_query):
         data = test_data[0]
         batch_request.render('MySsrComponent.js', data[0])
 
         original_jobs = dict(batch_request.jobs)
 
-        with mock.patch('fido.fetch'):
-            batch_request.submit()
+        batch_request.submit()
 
         spy_plugin_controller.prepare_request.assert_has_calls([
             mock.call(original_jobs),
@@ -379,18 +374,17 @@ class TestBatchRequestLifecycleMethods(object):
             original_jobs
         )
 
-    def test_calls_will_send_request(self, spy_plugin_controller, test_data, batch_request):
+    def test_calls_will_send_request(self, spy_plugin_controller, test_data, batch_request, mock_hypernova_query):
         data = test_data[0]
         batch_request.render('MySsrComponent.js', data[0])
 
-        with mock.patch('fido.fetch'):
-            batch_request.submit()
+        batch_request.submit()
 
         spy_plugin_controller.will_send_request.assert_has_calls([
             mock.call(batch_request.jobs),
         ])
 
-    def test_calls_after_response(self, spy_plugin_controller, test_data, batch_request):
+    def test_calls_after_response(self, spy_plugin_controller, test_data, batch_request, mock_hypernova_query):
         data = test_data[0]
         ssr_token = batch_request.render('MySsrComponent.js', data[0])
 
@@ -404,9 +398,8 @@ class TestBatchRequestLifecycleMethods(object):
             }
         }
 
-        with mock.patch('fido.fetch') as mock_fetch:
-            mock_fetch.return_value.wait.return_value.json.return_value = fake_response_json
-            response = batch_request.submit()
+        mock_hypernova_query.return_value.json.return_value = fake_response_json
+        response = batch_request.submit()
 
         assert spy_plugin_controller.after_response.called
 
@@ -420,7 +413,7 @@ class TestBatchRequestLifecycleMethods(object):
 
         assert response == spy_plugin_controller.after_response(parsed_response)
 
-    def test_calls_on_success(self, spy_plugin_controller, test_data, batch_request):
+    def test_calls_on_success(self, spy_plugin_controller, test_data, batch_request, mock_hypernova_query):
         data = test_data[0]
         ssr_token = batch_request.render('MySsrComponent.js', data[0])
 
@@ -434,16 +427,15 @@ class TestBatchRequestLifecycleMethods(object):
             }
         }
 
-        with mock.patch('fido.fetch') as mock_fetch:
-            mock_fetch.return_value.wait.return_value.json.return_value = fake_response_json
-            response = batch_request.submit()
+        mock_hypernova_query.return_value.json.return_value = fake_response_json
+        response = batch_request.submit()
 
         spy_plugin_controller.on_success.assert_called_once_with(
             response,
             batch_request.jobs,
         )
 
-    def test_calls_on_error(self, spy_plugin_controller, test_data, batch_request):
+    def test_calls_on_error(self, spy_plugin_controller, test_data, batch_request, mock_hypernova_query):
         data = test_data[0]
         batch_request.render('MyComponent.js', data[0])
 
@@ -455,9 +447,8 @@ class TestBatchRequestLifecycleMethods(object):
             }
         }
 
-        with mock.patch('fido.fetch') as mock_fetch:
-            mock_fetch.return_value.wait.return_value.json.return_value = fake_response_json
-            batch_request.submit()
+        mock_hypernova_query.return_value.json.return_value = fake_response_json
+        batch_request.submit()
 
         spy_plugin_controller.on_error.assert_called_once_with(
             HypernovaError(
@@ -468,25 +459,29 @@ class TestBatchRequestLifecycleMethods(object):
             batch_request.jobs,
         )
 
-    def test_calls_on_error_on_unhealthy_service(self, spy_plugin_controller, test_data, batch_request):
+    def test_calls_on_error_on_unhealthy_service(
+        self,
+        spy_plugin_controller,
+        test_data,
+        batch_request,
+        mock_hypernova_query,
+    ):
         data = test_data[0]
         batch_request.render('MyComponent.js', data[0])
 
         with mock.patch(
-            'fido.fetch'
-        ) as mock_fetch, mock.patch(
             'traceback.format_tb',
             return_value=[
                 'Traceback:\n',
                 '  foo:\n',
             ],
         ):
-            mock_fetch.return_value.wait.return_value.json.side_effect = NetworkError('oh no')
+            mock_hypernova_query.return_value.json.side_effect = HypernovaQueryError('oh no')
             batch_request.submit()
 
         spy_plugin_controller.on_error.assert_called_once_with(
             HypernovaError(
-                name='NetworkError',
+                name='HypernovaQueryError',
                 message='oh no',
                 stack=['Traceback:', '  foo:'],
             ),
