@@ -81,7 +81,8 @@ class HypernovaQuery(object):
                 # problem (socket closed, etc.) and not for non-2xx statuses.
                 if result.code != 200:
                     raise HypernovaQueryError(
-                        'Received response with status code {} from Hypernova.'.format(result.code),
+                        'Received response with status code {} from Hypernova. Response body:\n'
+                        '{}'.format(result.code, result.body.decode('UTF-8', 'ignore')),
                     )
                 else:
                     json = result.json()

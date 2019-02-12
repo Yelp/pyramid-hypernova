@@ -100,6 +100,7 @@ class TestHypernovaQuery(object):
 
     def test_error_status_code_send_asynchronous(self, mock_fido_fetch, mock_requests_post):
         mock_fido_fetch.return_value.wait.return_value.code = 504
+        mock_fido_fetch.return_value.wait.return_value.body = b'<h1>504 Bad Gateway</h1>'
         mock_fido_fetch.return_value.wait.return_value.json.side_effect = AssertionError()
 
         query = HypernovaQuery(TEST_JOB_GROUP, 'google.com', JSONEncoder(), False)
@@ -110,4 +111,7 @@ class TestHypernovaQuery(object):
 
         with pytest.raises(HypernovaQueryError) as exc_info:
             query.json()
-        assert str(exc_info.value) == 'Received response with status code 504 from Hypernova.'
+        assert str(exc_info.value) == (
+            'Received response with status code 504 from Hypernova. Response body:\n'
+            '<h1>504 Bad Gateway</h1>'
+        )
