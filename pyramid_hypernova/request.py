@@ -74,7 +74,16 @@ class HypernovaQuery(object):
         else:
             try:
                 result = self.response.wait()
-                json = result.json()
             except NetworkError as e:
                 raise HypernovaQueryError(e)
+            else:
+                # NetworkError is only called raised there's an actual network
+                # problem (socket closed, etc.) and not for non-2xx statuses.
+                if result.code != 200:
+                    raise HypernovaQueryError(
+                        'Received response with status code {} from Hypernova. Response body:\n'
+                        '{}'.format(result.code, result.body.decode('UTF-8', 'ignore')),
+                    )
+                else:
+                    json = result.json()
         return json

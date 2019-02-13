@@ -69,14 +69,12 @@ class TestHypernovaQuery(object):
         mock_fido_fetch.assert_not_called()
         mock_requests_post.assert_called_once()
 
-        try:
+        with pytest.raises(HypernovaQueryError) as exc_info:
             query.json()
-        except HypernovaQueryError as e:
-            exception = e
-
-        assert str(exception) == str(HypernovaQueryError(HTTPError('ayy lmao')))
+        assert str(exc_info.value) == str(HypernovaQueryError(NetworkError('ayy lmao')))
 
     def test_successful_send_asynchronous(self, mock_fido_fetch, mock_requests_post):
+        mock_fido_fetch.return_value.wait.return_value.code = 200
         mock_fido_fetch.return_value.wait.return_value.json.return_value = 'ayy lmao'
 
         query = HypernovaQuery(TEST_JOB_GROUP, 'google.com', JSONEncoder(), False)
@@ -96,9 +94,24 @@ class TestHypernovaQuery(object):
         mock_fido_fetch.assert_called_once()
         mock_requests_post.assert_not_called()
 
-        try:
+        with pytest.raises(HypernovaQueryError) as exc_info:
             query.json()
-        except HypernovaQueryError as e:
-            exception = e
+        assert str(exc_info.value) == str(HypernovaQueryError(NetworkError('ayy lmao')))
 
-        assert str(exception) == str(HypernovaQueryError(NetworkError('ayy lmao')))
+    def test_error_status_code_send_asynchronous(self, mock_fido_fetch, mock_requests_post):
+        mock_fido_fetch.return_value.wait.return_value.code = 504
+        mock_fido_fetch.return_value.wait.return_value.body = b'<h1>504 Bad Gateway</h1>'
+        mock_fido_fetch.return_value.wait.return_value.json.side_effect = AssertionError()
+
+        query = HypernovaQuery(TEST_JOB_GROUP, 'google.com', JSONEncoder(), False)
+        query.send()
+
+        mock_fido_fetch.assert_called_once()
+        mock_requests_post.assert_not_called()
+
+        with pytest.raises(HypernovaQueryError) as exc_info:
+            query.json()
+        assert str(exc_info.value) == (
+            'Received response with status code 504 from Hypernova. Response body:\n'
+            '<h1>504 Bad Gateway</h1>'
+        )
