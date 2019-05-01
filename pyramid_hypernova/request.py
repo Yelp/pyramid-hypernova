@@ -23,39 +23,40 @@ class HypernovaQueryError(Exception):
 class HypernovaQuery(object):
     """ Abstract Hypernova query """
 
-    def __init__(self, job_group, url, json_encoder, synchronous):
+    def __init__(self, job_group, url, json_encoder, synchronous, request_headers):
         """
         Build a Hypernova query.
         :param job_group: A job group (see create_job_groups)
         :param url: the URL of the Hypernova server we should query
         :param json_encoder: A JSON encoder to encode the query with
-        :param synchronous: True to synchronously query CRS (faster), False to
-            query asynchronously (allows parallelization)
+        :param synchronous: True to synchronously query hypernova (faster),
+            False to query asynchronously (allows parallelization)
+        :param request_headers: dict of request headers to add
         """
         self.job_group = job_group
         self.url = url
         self.json_encoder = json_encoder
         self.synchronous = synchronous
+        self.request_headers = request_headers
 
     def send(self):
         """ Query Hypernova """
         job_str = self.json_encoder.encode(create_jobs_payload(self.job_group))
         job_bytes = job_str.encode('utf-8')
 
+        request_headers = dict(self.request_headers)
+        request_headers['Content-Type'] = 'application/json'
+
         if self.synchronous:
             self.response = requests.post(
                 url=self.url,
-                headers={
-                    'Content-Type': 'application/json',
-                },
+                headers=request_headers,
                 data=job_bytes,
             )
         else:
             self.response = fido.fetch(
                 url=self.url,
-                headers={
-                    'Content-Type': ['application/json'],
-                },
+                headers={key: [value] for key, value in request_headers.items()},
                 method='POST',
                 body=job_bytes,
             )

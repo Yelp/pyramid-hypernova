@@ -146,12 +146,14 @@ class BatchRequest(object):
             job_groups = create_job_groups(self.jobs, self.max_batch_size)
             queries = []
 
+            # Fido is asynchronous and Python2.7 is bad at asynchronous, incurring 10-30ms of overhead
+            # when calling and immediately waiting on an HTTP request. If we only have one request to
+            # make, use synchronous Requests instead to save a little time.
+            synchronous = len(job_groups) == 1
+
             for job_group in job_groups:
-                # Fido is asynchronous and Python2.7 is bad at asynchronous, incurring 10-30ms of overhead
-                # when calling and immediately waiting on an HTTP request. If we only have one request to
-                # make, use synchronous Requests instead to save a little time.
-                synchronous = len(job_groups) == 1
-                query = HypernovaQuery(job_group, self.batch_url, self.json_encoder, synchronous)
+                request_headers = self.plugin_controller.transform_request_headers({})
+                query = HypernovaQuery(job_group, self.batch_url, self.json_encoder, synchronous, request_headers)
                 query.send()
                 queries.append((job_group, query))
 
