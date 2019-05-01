@@ -42,6 +42,19 @@ class PluginController(object):
             current_jobs = plugin.prepare_request(current_jobs, original_jobs)
         return current_jobs
 
+    def transform_request_headers(self, headers):
+        """A reducer type function that is called with the request headers that
+        will be sent to Huypernova. Plugins can use this to inject request
+        headers, e.g. to add distributed tracing headers (like Zipkin).
+
+        :type headers: Dict[str, str]
+        :returns: the modified headers to be submitted
+        :rtype: Dict[str, str]
+        """
+        for plugin in self.plugins:
+            headers = plugin.transform_request_headers(headers)
+        return headers
+
     def should_send_request(self, jobs):
         """An every type function. If one returns false then the request is
         canceled.
@@ -126,6 +139,17 @@ class BasePlugin(object):
         :rtype: Dict[str, Job]
         """
         return current_jobs
+
+    def transform_request_headers(self, headers):
+        """A reducer type function that is called with the request headers that
+        will be sent to Huypernova. Plugins can use this to inject request
+        headers, e.g. to add distributed tracing headers (like Zipkin).
+
+        :type headers: Dict[str, str]
+        :returns: the modified headers to be submitted
+        :rtype: Dict[str, str]
+        """
+        return headers
 
     def should_send_request(self, jobs):
         """An every type function. If one returns false then the request is

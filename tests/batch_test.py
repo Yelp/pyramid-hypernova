@@ -170,7 +170,7 @@ class TestBatchRequest(object):
             max_batch_size = batch_request.max_batch_size
             batch_count = (jobs_count + (max_batch_size - 1)) // max_batch_size
             assert mock_hypernova_query.call_count == batch_count
-            mock_hypernova_query.assert_called_with(mock.ANY, mock.ANY, mock.ANY, batch_count == 1)
+            mock_hypernova_query.assert_called_with(mock.ANY, mock.ANY, mock.ANY, batch_count == 1, {})
 
         assert response == {
             token_1.identifier: JobResult(
@@ -237,7 +237,7 @@ class TestBatchRequest(object):
             max_batch_size = batch_request.max_batch_size
             batch_count = (jobs_count + (max_batch_size - 1)) // max_batch_size
             assert mock_hypernova_query.call_count == batch_count
-            mock_hypernova_query.assert_called_with(mock.ANY, mock.ANY, mock.ANY, batch_count == 1)
+            mock_hypernova_query.assert_called_with(mock.ANY, mock.ANY, mock.ANY, batch_count == 1, {})
 
         assert response == {
             token_1.identifier: JobResult(
@@ -286,7 +286,7 @@ class TestBatchRequest(object):
             max_batch_size = batch_request.max_batch_size
             batch_count = (jobs_count + (max_batch_size - 1)) // max_batch_size
             assert mock_hypernova_query.call_count == batch_count
-            mock_hypernova_query.assert_called_with(mock.ANY, mock.ANY, mock.ANY, batch_count == 1)
+            mock_hypernova_query.assert_called_with(mock.ANY, mock.ANY, mock.ANY, batch_count == 1, {})
 
         assert response == {
             token.identifier: JobResult(
@@ -322,7 +322,7 @@ class TestBatchRequest(object):
             max_batch_size = batch_request.max_batch_size
             batch_count = (jobs_count + (max_batch_size - 1)) // max_batch_size
             assert mock_hypernova_query.call_count == batch_count
-            mock_hypernova_query.assert_called_with(mock.ANY, mock.ANY, mock.ANY, batch_count == 1)
+            mock_hypernova_query.assert_called_with(mock.ANY, mock.ANY, mock.ANY, batch_count == 1, {})
 
         assert response == {
             token.identifier: JobResult(

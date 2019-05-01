@@ -52,18 +52,22 @@ class TestHypernovaQuery(object):
     def test_successful_send_synchronous(self, mock_fido_fetch, mock_requests_post):
         mock_requests_post.return_value.json.return_value = 'ayy lmao'
 
-        query = HypernovaQuery(TEST_JOB_GROUP, 'google.com', JSONEncoder(), True)
+        query = HypernovaQuery(TEST_JOB_GROUP, 'google.com', JSONEncoder(), True, {'header1': 'value1'})
         query.send()
 
         mock_fido_fetch.assert_not_called()
-        mock_requests_post.assert_called_once()
+        mock_requests_post.assert_called_once_with(
+            url='google.com',
+            headers={'header1': 'value1', 'Content-Type': 'application/json'},
+            data=mock.ANY,
+        )
 
         assert query.json() == 'ayy lmao'
 
     def test_erroneous_send_synchronous(self, mock_fido_fetch, mock_requests_post):
         mock_requests_post.return_value.raise_for_status.side_effect = HTTPError('ayy lmao')
 
-        query = HypernovaQuery(TEST_JOB_GROUP, 'google.com', JSONEncoder(), True)
+        query = HypernovaQuery(TEST_JOB_GROUP, 'google.com', JSONEncoder(), True, {})
         query.send()
 
         mock_fido_fetch.assert_not_called()
@@ -77,10 +81,15 @@ class TestHypernovaQuery(object):
         mock_fido_fetch.return_value.wait.return_value.code = 200
         mock_fido_fetch.return_value.wait.return_value.json.return_value = 'ayy lmao'
 
-        query = HypernovaQuery(TEST_JOB_GROUP, 'google.com', JSONEncoder(), False)
+        query = HypernovaQuery(TEST_JOB_GROUP, 'google.com', JSONEncoder(), False, {'header1': 'value1'})
         query.send()
 
-        mock_fido_fetch.assert_called_once()
+        mock_fido_fetch.assert_called_once_with(
+            url='google.com',
+            method='POST',
+            headers={'header1': ['value1'], 'Content-Type': ['application/json']},
+            body=mock.ANY,
+        )
         mock_requests_post.assert_not_called()
 
         assert query.json() == 'ayy lmao'
@@ -88,7 +97,7 @@ class TestHypernovaQuery(object):
     def test_erroneous_send_asynchronous(self, mock_fido_fetch, mock_requests_post):
         mock_fido_fetch.return_value.wait.side_effect = NetworkError('ayy lmao')
 
-        query = HypernovaQuery(TEST_JOB_GROUP, 'google.com', JSONEncoder(), False)
+        query = HypernovaQuery(TEST_JOB_GROUP, 'google.com', JSONEncoder(), False, {})
         query.send()
 
         mock_fido_fetch.assert_called_once()
@@ -103,7 +112,7 @@ class TestHypernovaQuery(object):
         mock_fido_fetch.return_value.wait.return_value.body = b'<h1>504 Bad Gateway</h1>'
         mock_fido_fetch.return_value.wait.return_value.json.side_effect = AssertionError()
 
-        query = HypernovaQuery(TEST_JOB_GROUP, 'google.com', JSONEncoder(), False)
+        query = HypernovaQuery(TEST_JOB_GROUP, 'google.com', JSONEncoder(), False, {})
         query.send()
 
         mock_fido_fetch.assert_called_once()

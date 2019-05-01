@@ -74,6 +74,15 @@ class TestPluginController(object):
         jobs = mock.Mock()
         assert plugin_controller.should_send_request(jobs) is expected_value
 
+    def test_transform_request_headers(self, plugins, plugin_controller):
+        plugins[0].transform_request_headers.side_effect = lambda x: dict(x, header1='yes')
+        plugins[1].transform_request_headers.side_effect = lambda x: dict(x, header2='yes')
+        assert plugin_controller.transform_request_headers({'foo': 'bar'}) == {
+            'foo': 'bar',
+            'header1': 'yes',
+            'header2': 'yes',
+        }
+
     def test_will_send_request(self, plugins, plugin_controller):
         jobs = mock.Mock()
         plugin_controller.will_send_request(jobs)
@@ -127,6 +136,10 @@ class TestBasePlugin(object):
             current_jobs,
             original_jobs,
         ) == current_jobs
+
+    def test_transform_request_headers(self):
+        plugin = BasePlugin()
+        assert plugin.transform_request_headers({'foo': 'bar'}) == {'foo': 'bar'}
 
     def test_should_send_request(self):
         plugin = BasePlugin()
