@@ -2,13 +2,14 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from json import JSONEncoder
 import json
+from json import JSONEncoder
+
+from six import string_types
 
 from pyramid_hypernova.batch import BatchRequest
 from pyramid_hypernova.plugins import PluginController
 from pyramid_hypernova.rendering import RenderToken
-from six import string_types
 
 
 def hypernova_tween_factory(handler, registry):
@@ -34,7 +35,7 @@ def hypernova_tween_factory(handler, registry):
 
         hypernova_response = request.hypernova_batch.submit()
 
-        if request.response.content_type == 'application/json':
+        if response.content_type == 'application/json':
             # For a JSON-encoded response, load the JSON into a dict and iteratively
             # perform token replacement. At the end, we re-encode the modified dict
             # back into the reponse.
@@ -57,9 +58,9 @@ def hypernova_tween_factory(handler, registry):
             try:
                 # In python 2, decode str to unicode before writing to response.text
                 response_text = response_text.decode('utf-8')
-            except:
+            except AttributeError:  # pragma: no cover - This line isn't hit in python 2
                 # If '.decode' failed, we're in python 3 and response_text is already in unicode
-                pass
+                pass  # pragma: no cover - This line isn't hit in python 2
             response.text = response_text
             return response
 
