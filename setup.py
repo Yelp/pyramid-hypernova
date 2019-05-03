@@ -25,6 +25,7 @@ setup(
         'fido',
         'more-itertools',
         'requests',
+        'six',
     ],
     packages=find_packages(exclude=('tests*', 'testing*')),
 )

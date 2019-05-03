@@ -8,6 +8,7 @@ import json
 from pyramid_hypernova.batch import BatchRequest
 from pyramid_hypernova.plugins import PluginController
 from pyramid_hypernova.rendering import RenderToken
+from six import string_types
 
 
 def hypernova_tween_factory(handler, registry):
@@ -46,7 +47,7 @@ def hypernova_tween_factory(handler, registry):
                 key, value, parent_dict = stack.pop()
                 if isinstance(value, dict):
                     stack.extend([(new_key, new_value, value) for new_key, new_value in value.items()])
-                elif isinstance(value, unicode):
+                elif isinstance(value, string_types):
                     for identifier, job_result in hypernova_response.items():
                         token = RenderToken(identifier)
                         value = value.replace(str(token), job_result.html)
