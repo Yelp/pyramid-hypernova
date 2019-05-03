@@ -34,7 +34,12 @@ def hypernova_tween_factory(handler, registry):
         hypernova_response = request.hypernova_batch.submit()
 
         if request.response.content_type == 'application/json':
+            # For a JSON-encoded response, load the JSON into a dict and iteratively
+            # perform token replacement. At the end, we re-encode the modified dict
+            # back into the reponse.
             response_dict = json.loads(response.text)
+
+            # To modify the dict properly, we need to keep a reference to the parent dict
             stack = [(key, value, response_dict) for key, value in response_dict.items()]
 
             while stack:
@@ -47,7 +52,14 @@ def hypernova_tween_factory(handler, registry):
                         value = value.replace(str(token), job_result.html)
                     parent_dict[key] = value
 
-            response.text = json.dumps(response_dict).decode('utf-8')
+            response_text = json.dumps(response_dict)
+            try:
+                # In python 2, decode str to unicode before writing to response.text
+                response_text = response_text.decode('utf-8')
+            except:
+                # If '.decode' failed, we're in python 3 and response_text is already in unicode
+                pass
+            response.text = response_text
             return response
 
         for identifier, job_result in hypernova_response.items():
