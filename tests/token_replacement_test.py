@@ -4,8 +4,8 @@ from __future__ import unicode_literals
 
 import mock
 
-from pyramid_hypernova.context_manager import hypernova_token_replacement
 from pyramid_hypernova.rendering import RenderToken
+from pyramid_hypernova.token_replacement import hypernova_token_replacement
 from pyramid_hypernova.types import JobResult
 
 

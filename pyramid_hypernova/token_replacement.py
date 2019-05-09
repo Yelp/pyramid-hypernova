@@ -11,12 +11,13 @@ from pyramid_hypernova.rendering import RenderToken
 def hypernova_token_replacement(hypernova_batch):
     """A context manager that performs hypernova token replacement in a batch.
     Write the content you wish to modify in body['content'] where body is the
-    yielded dict.
+    yielded dict. Written content must be of unicode type in py2 and str in py3.
 
-    :param request: a Pyramid request object
-    :type request: pyramid.util.Request
-    :param registry: a Pyramid application registry object
-    :type registry: pyramid.registry.Registry
+    Example usage:
+        with hypernova_token_replacement(hypernova_batch) as body:
+            body['content'] = do_rendering_stuff(...)
+
+        response.body = body['content']
 
     :rtype: NoneType
     """

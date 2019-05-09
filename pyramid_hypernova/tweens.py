@@ -5,8 +5,8 @@ from __future__ import unicode_literals
 from json import JSONEncoder
 
 from pyramid_hypernova.batch import BatchRequest
-from pyramid_hypernova.context_manager import hypernova_token_replacement
 from pyramid_hypernova.plugins import PluginController
+from pyramid_hypernova.token_replacement import hypernova_token_replacement
 
 
 def hypernova_tween_factory(handler, registry):
