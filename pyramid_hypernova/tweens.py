@@ -5,8 +5,8 @@ from __future__ import unicode_literals
 from json import JSONEncoder
 
 from pyramid_hypernova.batch import BatchRequest
+from pyramid_hypernova.context_manager import hypernova_batch
 from pyramid_hypernova.plugins import PluginController
-from pyramid_hypernova.rendering import RenderToken
 
 
 def hypernova_tween_factory(handler, registry):
@@ -25,11 +25,10 @@ def hypernova_tween_factory(handler, registry):
         except AttributeError:
             pass
 
-        hypernova_response = request.hypernova_batch.submit()
+        with hypernova_batch(request, request.hypernova_batch) as body:
+            body['content'] = response.text
 
-        for identifier, job_result in hypernova_response.items():
-            token = RenderToken(identifier)
-            response.text = response.text.replace(str(token), job_result.html)
+        response.text = body['content']
 
         return response
 
