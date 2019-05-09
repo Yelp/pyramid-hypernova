@@ -8,10 +8,10 @@ from pyramid_hypernova.rendering import RenderToken
 
 
 @contextmanager
-def hypernova_batch(request, batch):
+def hypernova_token_replacement(hypernova_batch):
     """A context manager that performs hypernova token replacement in a batch.
     Write the content you wish to modify in body['content'] where body is the
-    yielded object.
+    yielded dict.
 
     :param request: a Pyramid request object
     :type request: pyramid.util.Request
@@ -24,11 +24,8 @@ def hypernova_batch(request, batch):
 
     yield body
 
-    hypernova_response = batch.submit()
+    hypernova_response = hypernova_batch.submit()
 
     for identifier, job_result in hypernova_response.items():
         token = RenderToken(identifier)
         body['content'] = body['content'].replace(str(token), job_result.html)
-
-    # If this context manager was used, we can skip token replacement in hypernova tween
-    request.disable_hypernova_tween = True

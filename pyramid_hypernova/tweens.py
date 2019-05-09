@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 from json import JSONEncoder
 
 from pyramid_hypernova.batch import BatchRequest
-from pyramid_hypernova.context_manager import hypernova_batch
+from pyramid_hypernova.context_manager import hypernova_token_replacement
 from pyramid_hypernova.plugins import PluginController
 
 
@@ -18,14 +18,13 @@ def hypernova_tween_factory(handler, registry):
         response = handler(request)
 
         try:
-            # If hypernova_batch context manager (pyramid_hypernova/context_manager.py)
-            # was used, this flag will be set to True.
+            # Skip token replacement logic if explicitly flagged to
             if request.disable_hypernova_tween:
                 return response
         except AttributeError:
             pass
 
-        with hypernova_batch(request, request.hypernova_batch) as body:
+        with hypernova_token_replacement(request.hypernova_batch) as body:
             body['content'] = response.text
 
         response.text = body['content']
