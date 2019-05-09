@@ -5,11 +5,10 @@ from __future__ import unicode_literals
 from contextlib import contextmanager
 
 from pyramid_hypernova.rendering import RenderToken
-from pyramid_hypernova.tweens import configure_hypernova_batch
 
 
 @contextmanager
-def hypernova_batch(request, registry):
+def hypernova_batch(request, batch):
     """A context manager that performs hypernova token replacement in a batch.
     Write the content you wish to modify in body['content'] where body is the
     yielded object.
@@ -21,14 +20,11 @@ def hypernova_batch(request, registry):
 
     :rtype: NoneType
     """
-    if not request.hypernova_batch:
-        request.hypernova_batch = configure_hypernova_batch(registry)
-
     body = {'content': None}
 
     yield body
 
-    hypernova_response = request.hypernova_batch.submit()
+    hypernova_response = batch.submit()
 
     for identifier, job_result in hypernova_response.items():
         token = RenderToken(identifier)
