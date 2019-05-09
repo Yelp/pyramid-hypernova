@@ -6,10 +6,35 @@ from json import JSONEncoder
 
 from pyramid_hypernova.batch import BatchRequest
 from pyramid_hypernova.plugins import PluginController
-from pyramid_hypernova.rendering import RenderToken
+from pyramid_hypernova.token_replacement import hypernova_token_replacement
 
 
 def hypernova_tween_factory(handler, registry):
+    registry = registry
+
+    def hypernova_tween(request):
+        request.hypernova_batch = configure_hypernova_batch(registry)
+
+        response = handler(request)
+
+        try:
+            # Skip token replacement logic if explicitly flagged to
+            if request.disable_hypernova_tween:
+                return response
+        except AttributeError:
+            pass
+
+        with hypernova_token_replacement(request.hypernova_batch) as body:
+            body['content'] = response.text
+
+        response.text = body['content']
+
+        return response
+
+    return hypernova_tween
+
+
+def configure_hypernova_batch(registry):
     get_batch_url = registry.settings['pyramid_hypernova.get_batch_url']
 
     plugins = registry.settings.get('pyramid_hypernova.plugins', [])
@@ -22,20 +47,8 @@ def hypernova_tween_factory(handler, registry):
 
     json_encoder = registry.settings.get('pyramid_hypernova.json_encoder', JSONEncoder())
 
-    def hypernova_tween(request):
-        request.hypernova_batch = batch_request_factory(
-            batch_url=get_batch_url(),
-            plugin_controller=plugin_controller,
-            json_encoder=json_encoder,
-        )
-        response = handler(request)
-
-        hypernova_response = request.hypernova_batch.submit()
-
-        for identifier, job_result in hypernova_response.items():
-            token = RenderToken(identifier)
-            response.text = response.text.replace(str(token), job_result.html)
-
-        return response
-
-    return hypernova_tween
+    return batch_request_factory(
+        batch_url=get_batch_url(),
+        plugin_controller=plugin_controller,
+        json_encoder=json_encoder,
+    )
