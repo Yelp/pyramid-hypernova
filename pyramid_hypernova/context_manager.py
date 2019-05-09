@@ -33,3 +33,6 @@ def hypernova_batch(request, registry):
     for identifier, job_result in hypernova_response.items():
         token = RenderToken(identifier)
         body['content'] = body['content'].replace(str(token), job_result.html)
+
+    # If this context manager was used, we can skip token replacement in hypernova tween
+    request.disable_hypernova_tween = True

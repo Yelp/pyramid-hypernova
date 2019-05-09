@@ -17,6 +17,14 @@ def hypernova_tween_factory(handler, registry):
 
         response = handler(request)
 
+        try:
+            # If hypernova_batch context manager (pyramid_hypernova/context_manager.py)
+            # was used, this flag will be set to True.
+            if request.disable_hypernova_tween:
+                return response
+        except AttributeError:
+            pass
+
         hypernova_response = request.hypernova_batch.submit()
 
         for identifier, job_result in hypernova_response.items():
