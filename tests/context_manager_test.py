@@ -37,6 +37,8 @@ def test_hypernova_batch_context_manager():
     mock_configure_hypernova_batch.assert_called_once_with(mock_registry)
     assert mock_hypernova_batch.submit.called
     assert body['content'] == '<div>REACT!</div>'
+    assert isinstance(mock_request.disable_hypernova_tween, bool)
+    assert mock_request.disable_hypernova_tween
 
 
 def test_hypernova_batch_context_manager_request_already_has_batch():
@@ -57,3 +59,5 @@ def test_hypernova_batch_context_manager_request_already_has_batch():
 
     assert mock_request.hypernova_batch.submit.called
     assert body['content'] == '<div>REACT!</div>'
+    assert isinstance(mock_request.disable_hypernova_tween, bool)
+    assert mock_request.disable_hypernova_tween
