@@ -17,7 +17,7 @@ def hypernova_tween_factory(handler, registry):
 
         response = handler(request)
 
-        if request.hypernova_batch.jobs == {}:
+        if not request.hypernova_batch.jobs:
             return response
 
         try:
