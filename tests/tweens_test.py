@@ -34,14 +34,14 @@ class TestTweens(object):
             )
         }
 
-        mock_registry = mock.Mock()
-        mock_registry.settings = {
+        self.mock_registry = mock.Mock()
+        self.mock_registry.settings = {
             'pyramid_hypernova.get_batch_url': mock_get_batch_url,
             'pyramid_hypernova.batch_request_factory': self.mock_batch_request_factory,
             'pyramid_hypernova.json_encoder': self.mock_json_encoder,
         }
 
-        self.tween = hypernova_tween_factory(mock_handler, mock_registry)
+        self.tween = hypernova_tween_factory(mock_handler, self.mock_registry)
 
         self.mock_request = mock.Mock()
 
@@ -83,3 +83,24 @@ class TestTweens(object):
         )
         assert not self.mock_batch_request_factory.return_value.submit.called
         assert response.text == str(self.token)
+
+    def test_tween_returns_unmodified_response_if_no_jobs(self):
+        mock_response = mock.Mock(
+            body="I'm a binary file",
+        )
+        mock_handler = mock.Mock()
+        mock_handler.return_value = mock_response
+
+        tween = hypernova_tween_factory(mock_handler, self.mock_registry)
+
+        mock_hypernova_batch = mock.Mock()
+        mock_hypernova_batch.jobs = {}
+
+        with mock.patch(
+            'pyramid_hypernova.tweens.configure_hypernova_batch',
+            return_value=mock_hypernova_batch,
+        ):
+            response = tween(self.mock_request)
+
+        assert not self.mock_batch_request_factory.return_value.submit.called
+        assert response == mock_response
