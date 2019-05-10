@@ -17,6 +17,9 @@ def hypernova_tween_factory(handler, registry):
 
         response = handler(request)
 
+        if not request.hypernova_batch.jobs:
+            return response
+
         try:
             # Skip token replacement logic if explicitly flagged to
             if request.disable_hypernova_tween:

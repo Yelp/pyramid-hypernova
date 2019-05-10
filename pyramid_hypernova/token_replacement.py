@@ -21,7 +21,7 @@ def hypernova_token_replacement(hypernova_batch):
 
     :rtype: NoneType
     """
-    body = {'content': None}
+    body = {'content': ''}
 
     yield body
 
