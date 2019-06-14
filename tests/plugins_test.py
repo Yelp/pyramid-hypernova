@@ -75,9 +75,10 @@ class TestPluginController(object):
         assert plugin_controller.should_send_request(jobs) is expected_value
 
     def test_transform_request_headers(self, plugins, plugin_controller):
-        plugins[0].transform_request_headers.side_effect = lambda x: dict(x, header1='yes')
-        plugins[1].transform_request_headers.side_effect = lambda x: dict(x, header2='yes')
-        assert plugin_controller.transform_request_headers({'foo': 'bar'}) == {
+        pyramid_request = mock.Mock()
+        plugins[0].transform_request_headers.side_effect = lambda x, r: dict(x, header1='yes')
+        plugins[1].transform_request_headers.side_effect = lambda x, r: dict(x, header2='yes')
+        assert plugin_controller.transform_request_headers({'foo': 'bar'}, pyramid_request) == {
             'foo': 'bar',
             'header1': 'yes',
             'header2': 'yes',
@@ -139,7 +140,8 @@ class TestBasePlugin(object):
 
     def test_transform_request_headers(self):
         plugin = BasePlugin()
-        assert plugin.transform_request_headers({'foo': 'bar'}) == {'foo': 'bar'}
+        pyramid_request = mock.Mock()
+        assert plugin.transform_request_headers({'foo': 'bar'}, pyramid_request) == {'foo': 'bar'}
 
     def test_should_send_request(self):
         plugin = BasePlugin()

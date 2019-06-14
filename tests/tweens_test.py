@@ -54,6 +54,7 @@ class TestTweens(object):
             batch_url='http://localhost:8888/batch',
             plugin_controller=mock.ANY,
             json_encoder=self.mock_json_encoder,
+            pyramid_request=self.mock_request,
         )
         assert self.mock_batch_request_factory.return_value.submit.called
         assert response.text == '<div>REACT!</div>'
@@ -67,6 +68,7 @@ class TestTweens(object):
             batch_url='http://localhost:8888/batch',
             plugin_controller=mock.ANY,
             json_encoder=self.mock_json_encoder,
+            pyramid_request=self.mock_request,
         )
         assert self.mock_batch_request_factory.return_value.submit.called
         assert response.text == '<div>REACT!</div>'
@@ -80,6 +82,7 @@ class TestTweens(object):
             batch_url='http://localhost:8888/batch',
             plugin_controller=mock.ANY,
             json_encoder=self.mock_json_encoder,
+            pyramid_request=self.mock_request,
         )
         assert not self.mock_batch_request_factory.return_value.submit.called
         assert response.text == str(self.token)
