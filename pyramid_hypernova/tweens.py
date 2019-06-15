@@ -13,7 +13,7 @@ def hypernova_tween_factory(handler, registry):
     registry = registry
 
     def hypernova_tween(request):
-        request.hypernova_batch = configure_hypernova_batch(registry)
+        request.hypernova_batch = configure_hypernova_batch(registry, request)
 
         response = handler(request)
 
@@ -37,7 +37,7 @@ def hypernova_tween_factory(handler, registry):
     return hypernova_tween
 
 
-def configure_hypernova_batch(registry):
+def configure_hypernova_batch(registry, request):
     get_batch_url = registry.settings['pyramid_hypernova.get_batch_url']
 
     plugins = registry.settings.get('pyramid_hypernova.plugins', [])
@@ -54,4 +54,5 @@ def configure_hypernova_batch(registry):
         batch_url=get_batch_url(),
         plugin_controller=plugin_controller,
         json_encoder=json_encoder,
+        pyramid_request=request,
     )

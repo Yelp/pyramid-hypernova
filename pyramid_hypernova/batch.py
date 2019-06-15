@@ -50,12 +50,13 @@ def create_job_groups(jobs, max_batch_size):
 
 class BatchRequest(object):
 
-    def __init__(self, batch_url, plugin_controller, max_batch_size=None, json_encoder=JSONEncoder()):
+    def __init__(self, batch_url, plugin_controller, pyramid_request, max_batch_size=None, json_encoder=JSONEncoder()):
         self.batch_url = batch_url
         self.jobs = {}
         self.plugin_controller = plugin_controller
         self.max_batch_size = max_batch_size
         self.json_encoder = json_encoder
+        self.pyramid_request = pyramid_request
 
     def render(self, name, data):
         identifier = str(uuid.uuid4())
@@ -152,7 +153,7 @@ class BatchRequest(object):
             synchronous = len(job_groups) == 1
 
             for job_group in job_groups:
-                request_headers = self.plugin_controller.transform_request_headers({})
+                request_headers = self.plugin_controller.transform_request_headers({}, self.pyramid_request)
                 query = HypernovaQuery(job_group, self.batch_url, self.json_encoder, synchronous, request_headers)
                 query.send()
                 queries.append((job_group, query))

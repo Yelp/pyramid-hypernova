@@ -1,4 +1,5 @@
 coverage
 mock
 pre-commit>=0.12.0
+pyramid
 pytest

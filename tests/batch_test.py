@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 from json import JSONEncoder
 
 import mock
+import pyramid.request
 import pytest
 
 from pyramid_hypernova.batch import BatchRequest
@@ -108,6 +109,7 @@ def batch_request(spy_plugin_controller, test_data, request):
     return BatchRequest(
         'http://localhost:8888',
         spy_plugin_controller,
+        pyramid_request=pyramid.request.Request.blank('/'),
         max_batch_size=request.param,
         json_encoder=json_encoder,
     )
