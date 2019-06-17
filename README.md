@@ -2,6 +2,7 @@ pyramid-hypernova
 --------------
 
 [![PyPI version](https://badge.fury.io/py/pyramid-hypernova.svg)](https://pypi.python.org/pypi/pyramid-hypernova)
+[![Coverage Status](https://coveralls.io/repos/github/Yelp/pyramid-hypernova/badge.svg)](https://coveralls.io/github/Yelp/pyramid-hypernova)
 
 A Python client for Airbnb's [Hypernova](//github.com/airbnb/hypernova) server, for use with the [Pyramid](http://docs.pylonsproject.org/en/latest/docs/pyramid.html) web framework.
 
