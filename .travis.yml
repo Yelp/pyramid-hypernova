@@ -1,12 +1,37 @@
 language: python
-matrix:
-    include:
-        - python: 2.7
-          env: TOXENV=py27
-        - python: 3.6
-          env: TOXENV=py36
-        - python: 3.6
-          env: TOXENV=pre-commit
+
+stages:
+  - test
+  - deploy
+
+jobs:
+  include:
+    - stage: test
+      python: '2.7'
+      env: TOXENV=py27
+    - stage: test
+      python: '3.6'
+      env: TOXENV=py36
+    - stage: test
+      python: '3.6'
+      env: TOXENV=pre-commit
+    - stage: deploy
+      script: skip
+
 install: pip install tox coveralls
+
 script: tox
-after_success: coveralls
+after_success: if [ "$TOXENV" == "py27" ]; then coveralls; fi;
+
+deploy:
+  provider: pypi
+  user: yelplabs
+  distributions: sdist bdist_wheel
+  skip_existing: true
+  password:
+    secure: HfFNaiodURa0URLw1ulF9b+8L5YRZUY3uYFAfv3sHSR7JIUwyBbdXBMNhbfSlx3JWBRj9xqPvpvF7Lu2JtJaMOe0UfAH+Ip6BSN/MrJ7GWYL3VzoyK8g41CUBBsx+Nynz4oDYoFBixYhUSuii8IAlspzmZ4Ys5GFuEJ2onaDVP85BCRQ5G/WkkGg8AbdZgnxcLG/qWOVpZ7Z2XlSlqalN8fj3gWNiSVePFWFmwaOOQ26TyyTC0DRXaY6lhitq9Gj9L8Ri60Wrm4CfnO4y8hTsJ9WJdpacHufsxEHsa82ERkjO4uSAAG9MX9eq+1e8NcQnc8+/yXRxg65fhbpWOex3HZ/e2crxstVyD/n7BPo1w7XYbkYXIzQkXRVzNKn77xNU1o4iXZLeHgaovCn8kOEbQnPXuOhu7x0d8LhcbpysbP6KbAZDg0KFK+3hLw1GN/pFILs12yztH/nqJclAIlC2YYIfFiIh5SIBhQJpgSU9y9QelmWKbAPSWg0V0AuWiOIGEAk28Cw9bC9bCVVBBwPmC6Mxu9ARNYbhtSTBTSDd738/nzKMF3QY0C1PR121Kby/AUaank5cOvBC1E+cSLDig0glFZTxmIHhf3c63aq6/txX+ODxcgl8WbiuAnx7gNDMChoKxx6W+W6NqHX4KZ5wAZDpNZ7bYv67k1f9Ql65oE=
+  on:
+    tags: true
+    repo: Yelp/pyramid-hypernova
+    branch: master
+    condition: $TRAVIS_BUILD_STAGE_NAME = Deploy
