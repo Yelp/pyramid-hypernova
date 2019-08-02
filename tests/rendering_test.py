@@ -36,7 +36,7 @@ def test_encode_with_custom_json_encoder():
 
 
 def test_render_blank_markup():
-    job = Job('MyCoolComponent.js', data={'title': 'sup'})
+    job = Job('MyCoolComponent.js', data={'title': 'sup'}, context={})
     markup = render_blank_markup('my-unique-token', job, False, JSONEncoder())
 
     assert markup == dedent('''
@@ -50,7 +50,7 @@ def test_render_blank_markup():
 
 
 def test_render_blank_markup_with_custom_json_encoder():
-    job = Job('MyCoolComponent.js', data={'a complex subject': 4.3 + 2.1j})
+    job = Job('MyCoolComponent.js', data={'a complex subject': 4.3 + 2.1j}, context={})
     markup = render_blank_markup('my-unique-token', job, False, ComplexJSONEncoder())
 
     assert markup == dedent('''
@@ -64,7 +64,7 @@ def test_render_blank_markup_with_custom_json_encoder():
 
 
 def test_render_blank_markup_with_error():
-    job = Job('MyCoolComponent.js', data={'title': 'sup'})
+    job = Job('MyCoolComponent.js', data={'title': 'sup'}, context={})
     markup = render_blank_markup('my-unique-token', job, True, JSONEncoder())
 
     assert markup == dedent('''

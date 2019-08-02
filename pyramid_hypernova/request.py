@@ -10,7 +10,7 @@ from requests.exceptions import HTTPError
 
 def create_jobs_payload(jobs):
     return {
-        identifier: {'name': job.name, 'data': job.data}
+        identifier: {'name': job.name, 'data': job.data, 'context': job.context}
         for identifier, job in jobs.items()
     }
 
