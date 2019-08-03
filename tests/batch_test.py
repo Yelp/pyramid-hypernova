@@ -23,10 +23,12 @@ test_jobs = {
     'some-unique-id': Job(
         name='FooBar.js',
         data={'baz': 1234},
+        context={},
     ),
     'some-other-unique-id': Job(
         name='MyComponent.js',
         data={'title': 'sup'},
+        context={},
     ),
 }
 
@@ -34,10 +36,12 @@ test_jobs_with_complex_numbers_in_data = {
     'some-unique-id': Job(
         name='FooBar.js',
         data={'baz': 1 + 2j},
+        context={},
     ),
     'some-other-unique-id': Job(
         name='MyComponent.js',
         data={'title': 3 + 4j},
+        context={},
     ),
 }
 
@@ -132,14 +136,17 @@ class TestBatchRequest(object):
             token_1.identifier: Job(
                 name='component-1.js',
                 data=data[0],
+                context={},
             ),
             token_2.identifier: Job(
                 name='component-2.js',
                 data=data[1],
+                context={},
             ),
             token_3.identifier: Job(
                 name='component-3.js',
                 data=data[2],
+                context={},
             ),
         }
 
@@ -178,17 +185,17 @@ class TestBatchRequest(object):
             token_1.identifier: JobResult(
                 error=None,
                 html='<div>component 1</div>',
-                job=Job(name='component-1.js', data=data[0])
+                job=Job(name='component-1.js', data=data[0], context={})
             ),
             token_2.identifier: JobResult(
                 error=None,
                 html='<div>component 2</div>',
-                job=Job(name='component-2.js', data=data[1])
+                job=Job(name='component-2.js', data=data[1], context={})
             ),
             token_3.identifier: JobResult(
                 error=None,
                 html='<div>component 3</div>',
-                job=Job(name='component-3.js', data=data[2])
+                job=Job(name='component-3.js', data=data[2], context={})
             ),
         }
 
@@ -208,7 +215,7 @@ class TestBatchRequest(object):
         data = test_data[0]
         token_1 = batch_request.render('MyComponent1.js', data[0])
         token_2 = batch_request.render('MyComponent2.js', data[1])
-        job_2 = Job(name='MyComponent2.js', data=data[1])
+        job_2 = Job(name='MyComponent2.js', data=data[1], context={})
 
         fake_response_json = {
             'error': None,
@@ -245,7 +252,7 @@ class TestBatchRequest(object):
             token_1.identifier: JobResult(
                 error=None,
                 html='<div>wow such SSR</div>',
-                job=Job(name='MyComponent1.js', data=data[0])
+                job=Job(name='MyComponent1.js', data=data[0], context={})
             ),
             token_2.identifier: JobResult(
                 error=HypernovaError(
@@ -266,7 +273,7 @@ class TestBatchRequest(object):
         mock_hypernova_query,
     ):
         data = test_data[0]
-        job = Job(name='MyComponent.js', data=data[0])
+        job = Job(name='MyComponent.js', data=data[0], context={})
         token = batch_request.render('MyComponent.js', data[0])
 
         fake_response_json = {
@@ -310,7 +317,7 @@ class TestBatchRequest(object):
         mock_hypernova_query,
     ):
         data = test_data[0]
-        job = Job(name='MyComponent.js', data=data[0])
+        job = Job(name='MyComponent.js', data=data[0], context={})
         token = batch_request.render('MyComponent.js', data[0])
 
         mock_hypernova_query.return_value.json.side_effect = HypernovaQueryError('oh no')

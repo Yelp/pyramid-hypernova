@@ -15,8 +15,8 @@ from pyramid_hypernova.request import HypernovaQueryError
 from pyramid_hypernova.types import Job
 
 TEST_JOB_GROUP = {
-    'yellow keycard': Job('open the exit door', 'behind the cacodemon'),
-    'red skull key': Job('get the bfg9k', 'rocket jump from the platform'),
+    'yellow keycard': Job('open the exit door', 'behind the cacodemon', {}),
+    'red skull key': Job('get the bfg9k', 'rocket jump from the platform', {'foo': 'bar'}),
 }
 
 
@@ -39,10 +39,12 @@ def test_create_jobs_payload():
         'yellow keycard': {
             'name': 'open the exit door',
             'data': 'behind the cacodemon',
+            'context': {},
         },
         'red skull key': {
             'name': 'get the bfg9k',
             'data': 'rocket jump from the platform',
+            'context': {'foo': 'bar'},
         }
     }
 

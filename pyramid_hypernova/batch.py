@@ -58,11 +58,14 @@ class BatchRequest(object):
         self.json_encoder = json_encoder
         self.pyramid_request = pyramid_request
 
-    def render(self, name, data):
+    def render(self, name, data, context=None):
+        if context is None:  # pragma: no cover
+            context = {}
+
         identifier = str(uuid.uuid4())
 
         data = self.plugin_controller.get_view_data(name, data)
-        job = Job(name, data)
+        job = Job(name, data, context)
         self.jobs[identifier] = job
 
         return RenderToken(identifier)
