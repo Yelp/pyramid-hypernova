@@ -116,9 +116,11 @@ class TestPluginController(object):
     def test_on_error(self, plugins, plugin_controller):
         err = mock.Mock()
         jobs = mock.Mock()
-        plugin_controller.on_error(err, jobs)
-        plugins[0].on_error.assert_called_once_with(err, jobs)
-        plugins[1].on_error.assert_called_once_with(err, jobs)
+        pyramid_request = mock.Mock()
+
+        plugin_controller.on_error(err, jobs, pyramid_request)
+        plugins[0].on_error.assert_called_once_with(err, jobs, pyramid_request)
+        plugins[1].on_error.assert_called_once_with(err, jobs, pyramid_request)
 
 
 class TestBasePlugin(object):

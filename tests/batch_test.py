@@ -466,6 +466,7 @@ class TestBatchRequestLifecycleMethods(object):
                 stack=[],
             ),
             batch_request.jobs,
+            batch_request.pyramid_request
         )
 
     def test_calls_on_error_on_unhealthy_service(
@@ -495,4 +496,5 @@ class TestBatchRequestLifecycleMethods(object):
                 stack=['Traceback:', '  foo:'],
             ),
             batch_request.jobs,
+            batch_request.pyramid_request
         )
