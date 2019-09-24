@@ -86,7 +86,7 @@ class BatchRequest(object):
                     message=result['error']['message'],
                     stack=result['error']['stack'],
                 )
-                self.plugin_controller.on_error(error, {identifier: job})
+                self.plugin_controller.on_error(error, {identifier: job}, self.pyramid_request)
 
             html = result['html']
             if not html:
@@ -117,7 +117,7 @@ class BatchRequest(object):
                     stack=response_json['error']['stack'],
                 )
                 pyramid_response = create_fallback_response(jobs, True, self.json_encoder, error)
-                self.plugin_controller.on_error(error, jobs)
+                self.plugin_controller.on_error(error, jobs, self.pyramid_request)
             else:
                 pyramid_response = self._parse_response(response_json)
                 self.plugin_controller.on_success(pyramid_response, jobs)
@@ -131,7 +131,7 @@ class BatchRequest(object):
                 str(e),
                 [line.rstrip('\n') for line in traceback.format_tb(exc_traceback)],
             )
-            self.plugin_controller.on_error(error, jobs)
+            self.plugin_controller.on_error(error, jobs, self.pyramid_request)
             pyramid_response = create_fallback_response(jobs, True, self.json_encoder, error)
 
         return pyramid_response

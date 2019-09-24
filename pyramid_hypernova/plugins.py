@@ -100,15 +100,16 @@ class PluginController(object):
         for plugin in self.plugins:
             plugin.on_success(response, jobs)
 
-    def on_error(self, err, jobs):
+    def on_error(self, err, jobs, request):
         """An event type function that is called whenever any error is
         encountered
 
         :type err: dict
         :type jobs: Dict[str, Job]
+        :type request: a Pyramid request object
         """
         for plugin in self.plugins:
-            plugin.on_error(err, jobs)
+            plugin.on_error(err, jobs, request)
 
 
 class BasePlugin(object):
@@ -191,10 +192,11 @@ class BasePlugin(object):
         :type jobs: Dict[str, Job]
         """
 
-    def on_error(self, err, jobs):
+    def on_error(self, err, jobs, request):
         """An event type function that is called whenever any error is
         encountered
 
         :type err: dict
         :type jobs: Dict[str, Job]
+        :type request: a Pyramid request object
         """
