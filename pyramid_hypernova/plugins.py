@@ -56,15 +56,16 @@ class PluginController(object):
             headers = plugin.transform_request_headers(headers, request)
         return headers
 
-    def should_send_request(self, jobs):
+    def should_send_request(self, jobs, request):
         """An every type function. If one returns false then the request is
         canceled.
 
         :type jobs: Dict[str, Job]
         :returns: False if the request should be cancelled
+        :type request: a Pyramid request object
         :rtype: bool
         """
-        return all(plugin.should_send_request(jobs) for plugin in self.plugins)
+        return all(plugin.should_send_request(jobs, request) for plugin in self.plugins)
 
     def will_send_request(self, jobs):
         """An event type function that is called prior to a request being sent.
@@ -154,11 +155,12 @@ class BasePlugin(object):
         """
         return headers
 
-    def should_send_request(self, jobs):
+    def should_send_request(self, jobs, request):
         """An every type function. If one returns false then the request is
         canceled.
 
         :type jobs: Dict[str, Job]
+        :type request: a Pyramid request object
         :returns: False if the request should be cancelled
         :rtype: bool
         """

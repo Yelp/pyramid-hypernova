@@ -145,7 +145,7 @@ class BatchRequest(object):
 
         response = {}
 
-        if self.jobs and self.plugin_controller.should_send_request(self.jobs):
+        if self.jobs and self.plugin_controller.should_send_request(self.jobs, self.pyramid_request):
             self.plugin_controller.will_send_request(self.jobs)
             job_groups = create_job_groups(self.jobs, self.max_batch_size)
             queries = []

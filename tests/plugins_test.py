@@ -69,10 +69,11 @@ class TestPluginController(object):
         plugin_1_return_value,
         expected_value
     ):
+        pyramid_request = mock.Mock()
         plugins[0].should_send_request.return_value = plugin_0_return_value
         plugins[1].should_send_request.return_value = plugin_1_return_value
         jobs = mock.Mock()
-        assert plugin_controller.should_send_request(jobs) is expected_value
+        assert plugin_controller.should_send_request(jobs, pyramid_request) is expected_value
 
     def test_transform_request_headers(self, plugins, plugin_controller):
         pyramid_request = mock.Mock()
@@ -146,9 +147,10 @@ class TestBasePlugin(object):
         assert plugin.transform_request_headers({'foo': 'bar'}, pyramid_request) == {'foo': 'bar'}
 
     def test_should_send_request(self):
+        pyramid_request = mock.Mock()
         plugin = BasePlugin()
         jobs = mock.sentinel.jobs
-        assert plugin.should_send_request(jobs)
+        assert plugin.should_send_request(jobs, pyramid_request)
 
     def test_after_response(self):
         plugin = BasePlugin()
