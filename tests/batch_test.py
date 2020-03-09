@@ -358,6 +358,7 @@ class TestBatchRequestLifecycleMethods(object):
         spy_plugin_controller.get_view_data.assert_called_once_with(
             'MyComponent.js',
             data[0],
+            batch_request.pyramid_request,
         )
 
         job = batch_request.jobs[token.identifier]
@@ -365,22 +366,18 @@ class TestBatchRequestLifecycleMethods(object):
         assert job.data == spy_plugin_controller.get_view_data(
             'MyComponent.js',
             data[0],
+            batch_request.pyramid_request,
         )
 
     def test_calls_prepare_request(self, spy_plugin_controller, test_data, batch_request, mock_hypernova_query):
         data = test_data[0]
         batch_request.render('MySsrComponent.js', data[0])
 
-        original_jobs = dict(batch_request.jobs)
-
         batch_request.submit()
 
-        spy_plugin_controller.prepare_request.assert_has_calls([
-            mock.call(original_jobs),
-        ])
-
-        assert batch_request.jobs == spy_plugin_controller.prepare_request(
-            original_jobs
+        spy_plugin_controller.prepare_request.assert_called_once_with(
+            batch_request.jobs,
+            batch_request.pyramid_request
         )
 
     def test_calls_will_send_request(self, spy_plugin_controller, test_data, batch_request, mock_hypernova_query):
@@ -389,9 +386,10 @@ class TestBatchRequestLifecycleMethods(object):
 
         batch_request.submit()
 
-        spy_plugin_controller.will_send_request.assert_has_calls([
-            mock.call(batch_request.jobs),
-        ])
+        spy_plugin_controller.will_send_request.assert_called_once_with(
+            batch_request.jobs,
+            batch_request.pyramid_request,
+        )
 
     def test_calls_after_response(self, spy_plugin_controller, test_data, batch_request, mock_hypernova_query):
         data = test_data[0]
@@ -420,7 +418,7 @@ class TestBatchRequestLifecycleMethods(object):
             ),
         }
 
-        assert response == spy_plugin_controller.after_response(parsed_response)
+        assert response == spy_plugin_controller.after_response(parsed_response, batch_request.pyramid_request)
 
     def test_calls_on_success(self, spy_plugin_controller, test_data, batch_request, mock_hypernova_query):
         data = test_data[0]
@@ -442,6 +440,7 @@ class TestBatchRequestLifecycleMethods(object):
         spy_plugin_controller.on_success.assert_called_once_with(
             response,
             batch_request.jobs,
+            batch_request.pyramid_request,
         )
 
     def test_calls_on_error(self, spy_plugin_controller, test_data, batch_request, mock_hypernova_query):

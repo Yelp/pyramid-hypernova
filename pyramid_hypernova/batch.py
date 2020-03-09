@@ -64,7 +64,7 @@ class BatchRequest(object):
 
         identifier = str(uuid.uuid4())
 
-        data = self.plugin_controller.get_view_data(name, data)
+        data = self.plugin_controller.get_view_data(name, data, self.pyramid_request)
         job = Job(name, data, context)
         self.jobs[identifier] = job
 
@@ -120,7 +120,7 @@ class BatchRequest(object):
                 self.plugin_controller.on_error(error, jobs, self.pyramid_request)
             else:
                 pyramid_response = self._parse_response(response_json)
-                self.plugin_controller.on_success(pyramid_response, jobs)
+                self.plugin_controller.on_success(pyramid_response, jobs, self.pyramid_request)
 
         except (HypernovaQueryError, ValueError) as e:
             # the service is unhealthy. fall back to client-side rendering
@@ -141,12 +141,12 @@ class BatchRequest(object):
 
         :rtype: Dict[str, JobResult]
         """
-        self.jobs = self.plugin_controller.prepare_request(self.jobs)
+        self.jobs = self.plugin_controller.prepare_request(self.jobs, self.pyramid_request)
 
         response = {}
 
         if self.jobs and self.plugin_controller.should_send_request(self.jobs, self.pyramid_request):
-            self.plugin_controller.will_send_request(self.jobs)
+            self.plugin_controller.will_send_request(self.jobs, self.pyramid_request)
             job_groups = create_job_groups(self.jobs, self.max_batch_size)
             queries = []
 
@@ -168,5 +168,5 @@ class BatchRequest(object):
             # fall back to client-side rendering
             response.update(create_fallback_response(self.jobs, True, self.json_encoder))
 
-        response = self.plugin_controller.after_response(response)
+        response = self.plugin_controller.after_response(response, self.pyramid_request)
         return response
