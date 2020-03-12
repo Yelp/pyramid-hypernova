@@ -166,7 +166,11 @@ class BatchRequest(object):
 
         else:
             # fall back to client-side rendering
-            response.update(create_fallback_response(self.jobs, True, self.json_encoder))
+            response.update(create_fallback_response(
+                self.jobs,
+                throw_client_error=False,  # client-side rendering was intentional; don't throw an error
+                json_encoder=self.json_encoder
+            ))
 
         response = self.plugin_controller.after_response(response, self.pyramid_request)
         return response

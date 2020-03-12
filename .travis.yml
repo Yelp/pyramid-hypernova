@@ -10,10 +10,10 @@ jobs:
       python: '2.7'
       env: TOXENV=py27
     - stage: test
-      python: '3.6'
-      env: TOXENV=py36
+      python: '3.7'
+      env: TOXENV=py37
     - stage: test
-      python: '3.6'
+      python: '3.7'
       env: TOXENV=pre-commit
     - stage: deploy
       script: skip
