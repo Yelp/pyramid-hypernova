@@ -38,7 +38,7 @@ def hypernova_tween_factory(handler, registry):
 
 
 def configure_hypernova_batch(registry, request):
-    get_batch_url = registry.settings['pyramid_hypernova.get_batch_url']
+    get_job_group_url = registry.settings['pyramid_hypernova.get_job_group_url']
 
     plugins = registry.settings.get('pyramid_hypernova.plugins', [])
     plugin_controller = PluginController(plugins)
@@ -51,7 +51,7 @@ def configure_hypernova_batch(registry, request):
     json_encoder = registry.settings.get('pyramid_hypernova.json_encoder', JSONEncoder())
 
     return batch_request_factory(
-        batch_url=get_batch_url(),
+        get_job_group_url=get_job_group_url,
         plugin_controller=plugin_controller,
         json_encoder=json_encoder,
         pyramid_request=request,
