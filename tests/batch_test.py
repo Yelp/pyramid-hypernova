@@ -97,6 +97,11 @@ def spy_plugin_controller():
     return mock.Mock(wraps=plugin_controller)
 
 
+@pytest.fixture
+def spy_get_job_group_url():
+    return mock.Mock(return_value='http://localhost:8888')
+
+
 @pytest.fixture(params=[
     # (data, use_complex_json_encoder)
     ([{'key-1': 'value-1'}, {'key-2': 'value-2'}, {'key-3': 'value-3'}], False),
@@ -108,11 +113,11 @@ def test_data(request):
 
 
 @pytest.fixture(params=[None, 1, 2])
-def batch_request(spy_plugin_controller, test_data, request):
+def batch_request(spy_get_job_group_url, spy_plugin_controller, test_data, request):
     json_encoder = ComplexJSONEncoder() if test_data[1] else JSONEncoder()
     return BatchRequest(
-        'http://localhost:8888',
-        spy_plugin_controller,
+        get_job_group_url=spy_get_job_group_url,
+        plugin_controller=spy_plugin_controller,
         pyramid_request=pyramid.request.Request.blank('/'),
         max_batch_size=request.param,
         json_encoder=json_encoder,
@@ -127,7 +132,7 @@ def mock_hypernova_query():
 
 class TestBatchRequest(object):
 
-    def test_successful_batch_request(self, spy_plugin_controller, test_data, batch_request, mock_hypernova_query):
+    def test_successful_batch_request(self, spy_get_job_group_url, test_data, batch_request, mock_hypernova_query):
         data = test_data[0]
         token_1 = batch_request.render('component-1.js', data[0])
         token_2 = batch_request.render('component-2.js', data[1])
@@ -172,14 +177,18 @@ class TestBatchRequest(object):
         response = batch_request.submit()
 
         if batch_request.max_batch_size is None:
+            assert spy_get_job_group_url.call_count == 1
+            # get_job_group_url is supplied with the job group
+            assert len(spy_get_job_group_url.mock_calls[0].args[0]) == 3
             assert mock_hypernova_query.call_count == 1
         else:
             # Division (rounded-up) up to get total number of calls
             jobs_count = len(batch_request.jobs)
             max_batch_size = batch_request.max_batch_size
             batch_count = (jobs_count + (max_batch_size - 1)) // max_batch_size
+            assert spy_get_job_group_url.call_count == batch_count
             assert mock_hypernova_query.call_count == batch_count
-            mock_hypernova_query.assert_called_with(mock.ANY, mock.ANY, mock.ANY, batch_count == 1, {})
+            mock_hypernova_query.assert_called_with(mock.ANY, 'http://localhost:8888', mock.ANY, batch_count == 1, {})
 
         assert response == {
             token_1.identifier: JobResult(

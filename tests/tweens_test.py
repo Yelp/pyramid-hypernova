@@ -21,7 +21,7 @@ class TestTweens(object):
             text=str(self.token)
         )
 
-        mock_get_batch_url = mock.Mock(return_value='http://localhost:8888/batch')
+        self.mock_get_job_group_url = mock.Mock(return_value='http://localhost:8888/batch')
 
         self.mock_json_encoder = mock.Mock()
 
@@ -36,7 +36,7 @@ class TestTweens(object):
 
         self.mock_registry = mock.Mock()
         self.mock_registry.settings = {
-            'pyramid_hypernova.get_batch_url': mock_get_batch_url,
+            'pyramid_hypernova.get_job_group_url': self.mock_get_job_group_url,
             'pyramid_hypernova.batch_request_factory': self.mock_batch_request_factory,
             'pyramid_hypernova.json_encoder': self.mock_json_encoder,
         }
@@ -51,7 +51,7 @@ class TestTweens(object):
         response = self.tween(self.mock_request)
 
         self.mock_batch_request_factory.assert_called_once_with(
-            batch_url='http://localhost:8888/batch',
+            get_job_group_url=self.mock_get_job_group_url,
             plugin_controller=mock.ANY,
             json_encoder=self.mock_json_encoder,
             pyramid_request=self.mock_request,
@@ -65,7 +65,7 @@ class TestTweens(object):
         response = self.tween(self.mock_request)
 
         self.mock_batch_request_factory.assert_called_once_with(
-            batch_url='http://localhost:8888/batch',
+            get_job_group_url=self.mock_get_job_group_url,
             plugin_controller=mock.ANY,
             json_encoder=self.mock_json_encoder,
             pyramid_request=self.mock_request,
@@ -79,7 +79,7 @@ class TestTweens(object):
         response = self.tween(self.mock_request)
 
         self.mock_batch_request_factory.assert_called_once_with(
-            batch_url='http://localhost:8888/batch',
+            get_job_group_url=self.mock_get_job_group_url,
             plugin_controller=mock.ANY,
             json_encoder=self.mock_json_encoder,
             pyramid_request=self.mock_request,
