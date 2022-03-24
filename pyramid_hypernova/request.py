@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 import fido
 import requests
 from fido.exceptions import NetworkError
+from requests.exceptions import ConnectionError
 from requests.exceptions import HTTPError
 
 
@@ -42,23 +43,23 @@ class HypernovaQuery(object):
     def send(self):
         """ Query Hypernova """
         job_str = self.json_encoder.encode(create_jobs_payload(self.job_group))
-        job_bytes = job_str.encode('utf-8')
+        self.job_bytes = job_str.encode('utf-8')
 
-        request_headers = dict(self.request_headers)
-        request_headers['Content-Type'] = 'application/json'
+        self.request_headers = dict(self.request_headers)
+        self.request_headers['Content-Type'] = 'application/json'
 
         if self.synchronous:
-            self.response = requests.post(
-                url=self.url,
-                headers=request_headers,
-                data=job_bytes,
-            )
+            # do nothing! requests.post() will throw an HTTPError if there's no healthy SSR
+            # upstream. we're not expecting this method to ever throw an exception,
+            # so make synchronous SSR requests in json() instead, where we're equipped to
+            # catch and deal with them.
+            pass
         else:
             self.response = fido.fetch(
                 url=self.url,
-                headers={key: [value] for key, value in request_headers.items()},
+                headers={key: [value] for key, value in self.request_headers.items()},
                 method='POST',
-                body=job_bytes,
+                body=self.job_bytes,
             )
 
     def json(self):
@@ -68,9 +69,14 @@ class HypernovaQuery(object):
         """
         if self.synchronous:
             try:
+                self.response = requests.post(
+                    url=self.url,
+                    headers=self.request_headers,
+                    data=self.job_bytes,
+                )
                 self.response.raise_for_status()
                 json = self.response.json()
-            except HTTPError as e:
+            except (HTTPError, ConnectionError) as e:
                 raise HypernovaQueryError(e)
         else:
             try:

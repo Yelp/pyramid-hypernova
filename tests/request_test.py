@@ -7,6 +7,7 @@ from json import JSONEncoder
 import mock
 import pytest
 from fido.exceptions import NetworkError
+from requests.exceptions import ConnectionError
 from requests.exceptions import HTTPError
 
 from pyramid_hypernova.request import create_jobs_payload
@@ -29,6 +30,13 @@ def mock_fido_fetch():
 @pytest.fixture
 def mock_requests_post():
     with mock.patch('pyramid_hypernova.request.requests.post') as mock_requests_post:
+        yield mock_requests_post
+
+
+@pytest.fixture
+def mock_requests_failed_post():
+    # simulates when there's no healthy SSR host to send a request to
+    with mock.patch('pyramid_hypernova.request.requests.post', side_effect=ConnectionError()) as mock_requests_post:
         yield mock_requests_post
 
 
@@ -58,13 +66,15 @@ class TestHypernovaQuery(object):
         query.send()
 
         mock_fido_fetch.assert_not_called()
+        mock_requests_post.assert_not_called()
+
+        assert query.json() == 'ayy lmao'
+
         mock_requests_post.assert_called_once_with(
             url='google.com',
             headers={'header1': 'value1', 'Content-Type': 'application/json'},
             data=mock.ANY,
         )
-
-        assert query.json() == 'ayy lmao'
 
     def test_erroneous_send_synchronous(self, mock_fido_fetch, mock_requests_post):
         mock_requests_post.return_value.raise_for_status.side_effect = HTTPError('ayy lmao')
@@ -73,7 +83,7 @@ class TestHypernovaQuery(object):
         query.send()
 
         mock_fido_fetch.assert_not_called()
-        mock_requests_post.assert_called_once()
+        mock_requests_post.assert_not_called()
 
         with pytest.raises(HypernovaQueryError) as exc_info:
             query.json()
@@ -126,3 +136,11 @@ class TestHypernovaQuery(object):
             'Received response with status code 504 from Hypernova. Response body:\n'
             '<h1>504 Bad Gateway</h1>'
         )
+
+    def test_does_not_throw_httperror_when_no_ssr_shard_available(self, mock_requests_failed_post):
+        # WEBCORE-10219: throwing an error during query.send() returns an http error instead of a fallback response
+        # instead, we should throw a HypernovaQueryError during query.json().
+        query = HypernovaQuery(TEST_JOB_GROUP, 'google.com', JSONEncoder(), True, {})
+        query.send()
+        with pytest.raises(HypernovaQueryError):
+            query.json()
