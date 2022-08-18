@@ -1,45 +1,33 @@
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    sha: v0.7.1
-    hooks:
-    -   id: trailing-whitespace
-        language_version: python3.7
-    -   id: end-of-file-fixer
-        language_version: python3.7
-        exclude: ^\.activate\.sh$
-    -   id: autopep8-wrapper
-        language_version: python3.7
-    -   id: check-docstring-first
-        language_version: python3.7
-    -   id: check-merge-conflict
-        language_version: python3.7
-    -   id: check-yaml
-        language_version: python3.7
-    -   id: debug-statements
-        language_version: python3.7
-    -   id: double-quote-string-fixer
-        language_version: python3.7
-    -   id: name-tests-test
-        language_version: python3.7
-    -   id: flake8
-        language_version: python3.7
-    -   id: check-added-large-files
-        language_version: python3.7
-        exclude: ^\.activate\.sh$
-    -   id: check-byte-order-marker
-        language_version: python3.7
-    -   id: fix-encoding-pragma
-        language_version: python3.7
--   repo: https://github.com/asottile/reorder_python_imports
-    sha: v0.3.1
-    hooks:
-    -   id: reorder-python-imports
-        language_version: python3.7
-        args: [
-            '--add-import', 'from __future__ import absolute_import',
-            '--add-import', 'from __future__ import unicode_literals',
-        ]
--   repo: https://github.com/asottile/pyupgrade
-    sha: v1.0.6
-    hooks:
-    -   id: pyupgrade
-        language_version: python3.7
+repos:
+    - repo: https://github.com/pre-commit/pre-commit-hooks
+      rev: v4.3.0
+      hooks:
+          - id: trailing-whitespace
+          - id: end-of-file-fixer
+            exclude: ^\.activate\.sh$
+          - id: check-docstring-first
+          - id: check-merge-conflict
+          - id: check-yaml
+          - id: debug-statements
+          - id: double-quote-string-fixer
+          - id: name-tests-test
+          - id: check-added-large-files
+            exclude: ^\.activate\.sh$
+          - id: check-byte-order-marker
+    - repo: https://github.com/pre-commit/mirrors-autopep8
+      rev: v1.7.0
+      hooks:
+          - id: autopep8
+    - repo: https://github.com/PyCQA/flake8
+      rev: 5.0.4
+      hooks:
+          - id: flake8
+    - repo: https://github.com/asottile/reorder_python_imports
+      rev: v3.8.2
+      hooks:
+          - id: reorder-python-imports
+    - repo: https://github.com/asottile/pyupgrade
+      rev: v2.37.3
+      hooks:
+          - id: pyupgrade
+            args: ['--py37-plus']

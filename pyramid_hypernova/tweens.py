@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 from json import JSONEncoder
 
 from pyramid_hypernova.batch import BatchRequest

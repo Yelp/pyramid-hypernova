@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 import sys
 import traceback
 import uuid
@@ -48,7 +44,7 @@ def create_job_groups(jobs, max_batch_size):
     return job_groups
 
 
-class BatchRequest(object):
+class BatchRequest:
 
     def __init__(
         self,

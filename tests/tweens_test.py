@@ -1,8 +1,5 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import unicode_literals
+from unittest import mock
 
-import mock
 import pytest
 
 from pyramid_hypernova.rendering import RenderToken
@@ -10,7 +7,7 @@ from pyramid_hypernova.tweens import hypernova_tween_factory
 from pyramid_hypernova.types import JobResult
 
 
-class TestTweens(object):
+class TestTweens:
 
     @pytest.fixture(autouse=True)
     def mock_setup(self):

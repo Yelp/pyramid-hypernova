@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 import fido
 import requests
 from fido.exceptions import NetworkError
@@ -18,10 +14,10 @@ def create_jobs_payload(jobs):
 
 class HypernovaQueryError(Exception):
     def __init__(self, child_error):
-        super(HypernovaQueryError, self).__init__(str(child_error))
+        super().__init__(str(child_error))
 
 
-class HypernovaQuery(object):
+class HypernovaQuery:
     """ Abstract Hypernova query """
 
     def __init__(self, job_group, url, json_encoder, synchronous, request_headers):

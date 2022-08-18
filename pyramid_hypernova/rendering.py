@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import re
 from textwrap import dedent
 
@@ -63,7 +58,7 @@ def render_blank_markup(identifier, job, throw_client_error, json_encoder):
     return blank_markup
 
 
-class RenderToken(object):
+class RenderToken:
     """A placeholder for a Hypernova job that can later be replaced by the
     rendered component.
 
@@ -77,7 +72,7 @@ class RenderToken(object):
 
     def __html__(self):
         """Custom HTML markup for templating languages that use markupsafe."""
-        return '<!--hypernova-render-token-{}-->'.format(self.identifier)
+        return f'<!--hypernova-render-token-{self.identifier}-->'
 
     def __str__(self):
         return self.__html__()

@@ -1,8 +1,5 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import unicode_literals
+from unittest import mock
 
-import mock
 import pytest
 
 from pyramid_hypernova.plugins import BasePlugin
@@ -19,7 +16,7 @@ def plugin_controller(plugins):
     return PluginController(plugins)
 
 
-class TestPluginController(object):
+class TestPluginController:
     def test_get_view_data(self, plugins, plugin_controller):
         pyramid_request = mock.Mock()
 
@@ -137,7 +134,7 @@ class TestPluginController(object):
         plugins[1].on_error.assert_called_once_with(err, jobs, pyramid_request)
 
 
-class TestBasePlugin(object):
+class TestBasePlugin:
     """Reducer functions on the BasePlugin should be identity functions."""
 
     def test_get_view_data(self):

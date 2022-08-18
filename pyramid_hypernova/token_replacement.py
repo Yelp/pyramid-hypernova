@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 from contextlib import contextmanager
 
 from pyramid_hypernova.rendering import RenderToken
@@ -11,7 +7,7 @@ from pyramid_hypernova.rendering import RenderToken
 def hypernova_token_replacement(hypernova_batch):
     """A context manager that performs hypernova token replacement in a batch.
     Write the content you wish to modify in body['content'] where body is the
-    yielded dict. Written content must be of unicode type in py2 and str in py3.
+    yielded dict. Written content must be str in py3.
 
     Example usage:
         with hypernova_token_replacement(hypernova_batch) as body:
