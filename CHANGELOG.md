@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [9.0.0] - 2022-08-18
+
+Python 2.7 support has been dropped. This package now requires py3.7+.
+
 ## [8.0.0] - 2021-05-17
 
 ### Changed
