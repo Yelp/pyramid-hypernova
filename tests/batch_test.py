@@ -1,10 +1,6 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 from json import JSONEncoder
+from unittest import mock
 
-import mock
 import pyramid.request
 import pytest
 
@@ -130,7 +126,7 @@ def mock_hypernova_query():
         yield mock_hypernova_query
 
 
-class TestBatchRequest(object):
+class TestBatchRequest:
 
     def test_successful_batch_request(self, spy_get_job_group_url, test_data, batch_request, mock_hypernova_query):
         data = test_data[0]
@@ -355,7 +351,7 @@ class TestBatchRequest(object):
         }
 
 
-class TestBatchRequestLifecycleMethods(object):
+class TestBatchRequestLifecycleMethods:
     """Test that BatchRequest calls plugin lifecycle methods at the
     appropriate times.
     """

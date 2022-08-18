@@ -1,8 +1,4 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
-import mock
+from unittest import mock
 
 from pyramid_hypernova.rendering import RenderToken
 from pyramid_hypernova.token_replacement import hypernova_token_replacement

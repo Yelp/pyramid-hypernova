@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 from setuptools import find_packages
 from setuptools import setup
 
@@ -15,12 +11,11 @@ setup(
     url='https://github.com/Yelp/pyramid-hypernova',
     description="A Python client for Airbnb's Hypernova server, for use with the Pyramid web framework.",
     classifiers=[
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'License :: OSI Approved :: MIT License',
     ],
+    python_requires='>=3.7',
     install_requires=[
         'fido',
         'more-itertools',

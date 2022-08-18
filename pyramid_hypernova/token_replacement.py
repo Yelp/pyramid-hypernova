@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 from contextlib import contextmanager
 
 from pyramid_hypernova.rendering import RenderToken

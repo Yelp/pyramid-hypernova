@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
-
-class PluginController(object):
+class PluginController:
     """A controller that coordinates calling hook methods of any registered
     plugins.
 
@@ -118,7 +113,7 @@ class PluginController(object):
             plugin.on_error(err, jobs, request)
 
 
-class BasePlugin(object):
+class BasePlugin:
     """A trivial base plugin that doesn't do anything.
 
     See https://github.com/airbnb/hypernova/blob/master/docs/client-spec.md

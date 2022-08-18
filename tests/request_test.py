@@ -1,10 +1,6 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 from json import JSONEncoder
+from unittest import mock
 
-import mock
 import pytest
 from fido.exceptions import NetworkError
 from requests.exceptions import ConnectionError
@@ -57,7 +53,7 @@ def test_create_jobs_payload():
     }
 
 
-class TestHypernovaQuery(object):
+class TestHypernovaQuery:
 
     def test_successful_send_synchronous(self, mock_fido_fetch, mock_requests_post):
         mock_requests_post.return_value.json.return_value = 'ayy lmao'
