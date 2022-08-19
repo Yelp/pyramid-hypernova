@@ -1,6 +1,7 @@
 from unittest import mock
 
 import pytest
+from pyramid.response import Response
 
 from pyramid_hypernova.rendering import RenderToken
 from pyramid_hypernova.tweens import hypernova_tween_factory
@@ -14,9 +15,7 @@ class TestTweens:
         self.token = RenderToken('my-unique-id')
 
         mock_handler = mock.Mock()
-        mock_handler.return_value = mock.Mock(
-            text=str(self.token)
-        )
+        mock_handler.return_value = Response(text=str(self.token))
 
         self.mock_get_job_group_url = mock.Mock(return_value='http://localhost:8888/batch')
 
@@ -47,6 +46,9 @@ class TestTweens:
 
         response = self.tween(self.mock_request)
 
+        # Access the response's body to ensure the batch request is made
+        response.body
+
         self.mock_batch_request_factory.assert_called_once_with(
             get_job_group_url=self.mock_get_job_group_url,
             plugin_controller=mock.ANY,
@@ -67,6 +69,10 @@ class TestTweens:
             json_encoder=self.mock_json_encoder,
             pyramid_request=self.mock_request,
         )
+
+        # Access the response's body to ensure the batch request is made
+        response.body
+
         assert self.mock_batch_request_factory.return_value.submit.called
         assert response.text == '<div>REACT!</div>'
 
@@ -74,6 +80,9 @@ class TestTweens:
         self.mock_request.disable_hypernova_tween = True
 
         response = self.tween(self.mock_request)
+
+        # Access the response's body to ensure the batch request is made
+        response.body
 
         self.mock_batch_request_factory.assert_called_once_with(
             get_job_group_url=self.mock_get_job_group_url,
@@ -85,7 +94,7 @@ class TestTweens:
         assert response.text == str(self.token)
 
     def test_tween_returns_unmodified_response_if_no_jobs(self):
-        mock_response = mock.Mock(
+        mock_response = Response(
             body="I'm a binary file",
         )
         mock_handler = mock.Mock()
@@ -101,6 +110,9 @@ class TestTweens:
             return_value=mock_hypernova_batch,
         ):
             response = tween(self.mock_request)
+
+            # Access the response's body to ensure the batch request is made
+            response.body
 
         assert not self.mock_batch_request_factory.return_value.submit.called
         assert response == mock_response

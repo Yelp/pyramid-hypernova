@@ -8,26 +8,34 @@ from pyramid_hypernova.token_replacement import hypernova_token_replacement
 def hypernova_tween_factory(handler, registry):
     registry = registry
 
-    def hypernova_tween(request):
-        request.hypernova_batch = configure_hypernova_batch(registry, request)
-
-        response = handler(request)
-
+    def hypernova_mapper(request, chunk):
         if not request.hypernova_batch.jobs:
-            return response
+            return chunk
 
         try:
             # Skip token replacement logic if explicitly flagged to
             if request.disable_hypernova_tween:
-                return response
+                return chunk
         except AttributeError:
             pass
 
+        transformed_chunk = chunk.decode('utf-8')
         with hypernova_token_replacement(request.hypernova_batch) as body:
-            body['content'] = response.text
+            body['content'] = transformed_chunk
 
-        response.text = body['content']
+        transformed_chunk = body['content']
+        return transformed_chunk.encode('utf-8')
 
+    def hypernova_tween(request):
+        request.hypernova_batch = configure_hypernova_batch(registry, request)
+        response = handler(request)
+        # Loop over all chunks in response.app_iter. Unlike accessing response.body
+        # or response.text directly, this avoids buffering and is important
+        # if our app_iter is a generator
+        #
+        # In cases where app_iter is a list (the default), this should work
+        # equivalently
+        response.app_iter = map(lambda chunk: hypernova_mapper(request, chunk), response.app_iter)
         return response
 
     return hypernova_tween
