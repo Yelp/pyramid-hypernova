@@ -6,7 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [9.1.0] - 2022-08-19
+
+### Changed
+
+The tween will now loop over `app_iter` chunks rather than accessing `response.text` directly: this should be backwards-compatible.
+
 ## [9.0.0] - 2022-08-18
+
+### Changed
 
 Python 2.7 support has been dropped. This package now requires py3.7+.
 
