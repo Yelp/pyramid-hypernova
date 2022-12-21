@@ -42,25 +42,36 @@ test_jobs_with_complex_numbers_in_data = {
 }
 
 
-@pytest.mark.parametrize('jobs,throw_client_error,json_encoder', [
-    (test_jobs, True, JSONEncoder()),
-    (test_jobs, False, JSONEncoder()),
-    (test_jobs, True, ComplexJSONEncoder()),
-    (test_jobs, False, ComplexJSONEncoder()),
-    (test_jobs_with_complex_numbers_in_data, True, ComplexJSONEncoder()),
-    (test_jobs_with_complex_numbers_in_data, False, ComplexJSONEncoder()),
+@pytest.mark.parametrize('jobs,throw_client_error,json_encoder,error,display_error_stack', [
+    (test_jobs, True, JSONEncoder(), HypernovaError('Error', 'Error msg', ['1: Error', '2: stack']), True),
+    (test_jobs, False, JSONEncoder(), HypernovaError('Error', 'Error msg', ['1: Error', '2: stack']), False),
+    (test_jobs, True, ComplexJSONEncoder(), None, True),
+    (test_jobs, False, ComplexJSONEncoder(), None, False),
+    (test_jobs_with_complex_numbers_in_data, True, ComplexJSONEncoder(), None, None),
+    (test_jobs_with_complex_numbers_in_data, False, ComplexJSONEncoder(), None, None),
 ])
-def test_create_fallback_response(jobs, throw_client_error, json_encoder):
+def test_create_fallback_response(jobs, throw_client_error, json_encoder, error, display_error_stack):
     expected_response = {
         identifier: JobResult(
-            error=None,
-            html=render_blank_markup(identifier, job, throw_client_error, json_encoder),
+            error=error,
+            html=render_blank_markup(
+                identifier,
+                job,
+                throw_client_error,
+                json_encoder,
+                (display_error_stack and error)
+            ),
             job=job,
         )
         for identifier, job in jobs.items()
     }
 
-    assert create_fallback_response(jobs, throw_client_error, json_encoder) == expected_response
+    assert create_fallback_response(
+        jobs,
+        throw_client_error,
+        json_encoder,
+        error,
+        display_error_stack) == expected_response
 
 
 @pytest.mark.parametrize('max_batch_size,expected', [

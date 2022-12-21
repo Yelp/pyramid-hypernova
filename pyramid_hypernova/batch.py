@@ -14,7 +14,7 @@ from pyramid_hypernova.types import Job
 from pyramid_hypernova.types import JobResult
 
 
-def create_fallback_response(jobs, throw_client_error, json_encoder, error=None):
+def create_fallback_response(jobs, throw_client_error, json_encoder, error=None, display_error_stack=False):
     """Create a response dict for falling back to client-side rendering.
 
     :rtype: Dict[str, Job]
@@ -22,7 +22,8 @@ def create_fallback_response(jobs, throw_client_error, json_encoder, error=None)
     return {
         identifier: JobResult(
             error=error,
-            html=render_blank_markup(identifier, job, throw_client_error, json_encoder),
+            html=render_blank_markup(identifier, job, throw_client_error,
+                                     json_encoder, (display_error_stack and error)),
             job=job,
         )
         for identifier, job in jobs.items()
@@ -60,6 +61,7 @@ class BatchRequest:
         self.max_batch_size = max_batch_size
         self.json_encoder = json_encoder
         self.pyramid_request = pyramid_request
+        self.display_error_stack = False
 
     def render(self, name, data, context=None):
         if context is None:  # pragma: no cover
@@ -119,7 +121,10 @@ class BatchRequest:
                     message=response_json['error']['message'],
                     stack=response_json['error']['stack'],
                 )
-                pyramid_response = create_fallback_response(jobs, True, self.json_encoder, error)
+
+                pyramid_response = create_fallback_response(
+                    jobs, True, self.json_encoder,
+                    error, self.display_error_stack)
                 self.plugin_controller.on_error(error, jobs, self.pyramid_request)
             else:
                 pyramid_response = self._parse_response(response_json)
@@ -135,7 +140,7 @@ class BatchRequest:
                 [line.rstrip('\n') for line in traceback.format_tb(exc_traceback)],
             )
             self.plugin_controller.on_error(error, jobs, self.pyramid_request)
-            pyramid_response = create_fallback_response(jobs, True, self.json_encoder, error)
+            pyramid_response = create_fallback_response(jobs, True, self.json_encoder, error, self.display_error_stack)
 
         return pyramid_response
 
@@ -145,7 +150,7 @@ class BatchRequest:
         :rtype: Dict[str, JobResult]
         """
         self.jobs = self.plugin_controller.prepare_request(self.jobs, self.pyramid_request)
-
+        self.display_error_stack = getattr(self.pyramid_request, 'display_error_stack', False)
         response = {}
 
         if self.jobs and self.plugin_controller.should_send_request(self.jobs, self.pyramid_request):
