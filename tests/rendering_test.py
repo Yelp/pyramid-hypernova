@@ -71,7 +71,6 @@ def test_render_blank_markup_with_custom_json_encoder():
 ])
 def test_render_blank_markup_when_throw_client_error_true(error, errorMarkup):
     job = Job('MyCoolComponent.js', data={'title': 'sup'}, context={})
-    # error = HypernovaError('Error', 'Error msg', ['1: Error', '2: stack'])
     markup = render_blank_markup('my-unique-token', job, True, JSONEncoder(), error)
 
     expected_markup = dedent('''

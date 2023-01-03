@@ -53,7 +53,8 @@ class BatchRequest:
         plugin_controller,
         pyramid_request,
         max_batch_size=None,
-        json_encoder=JSONEncoder()
+        json_encoder=JSONEncoder(),
+        display_error_stack=False
     ):
         self.get_job_group_url = get_job_group_url
         self.jobs = {}
@@ -61,7 +62,7 @@ class BatchRequest:
         self.max_batch_size = max_batch_size
         self.json_encoder = json_encoder
         self.pyramid_request = pyramid_request
-        self.display_error_stack = False
+        self.display_error_stack = display_error_stack
 
     def render(self, name, data, context=None):
         if context is None:  # pragma: no cover
@@ -150,7 +151,6 @@ class BatchRequest:
         :rtype: Dict[str, JobResult]
         """
         self.jobs = self.plugin_controller.prepare_request(self.jobs, self.pyramid_request)
-        self.display_error_stack = getattr(self.pyramid_request, 'display_error_stack', False)
         response = {}
 
         if self.jobs and self.plugin_controller.should_send_request(self.jobs, self.pyramid_request):
