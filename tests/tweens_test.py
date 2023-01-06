@@ -41,6 +41,22 @@ class TestTweens:
 
         self.mock_request = mock.Mock()
 
+    def test_configure_hypernova_batch_sets_display_error_stack_value_through_function(self):
+        self.should_display_error_stack = mock.Mock(return_value=True)
+        self.mock_registry.settings['pyramid_hypernova.should_display_error_stack'] = self.should_display_error_stack
+        response = self.tween(self.mock_request)
+
+        # Access the response's body to ensure the batch request is made
+        response.body
+
+        self.mock_batch_request_factory.assert_called_once_with(
+            get_job_group_url=self.mock_get_job_group_url,
+            plugin_controller=mock.ANY,
+            json_encoder=self.mock_json_encoder,
+            pyramid_request=self.mock_request,
+            display_error_stack=True
+        )
+
     def test_tween_replaces_tokens_when_disable_hypernova_tween_not_set(self):
         del self.mock_request.disable_hypernova_tween
 
@@ -54,6 +70,7 @@ class TestTweens:
             plugin_controller=mock.ANY,
             json_encoder=self.mock_json_encoder,
             pyramid_request=self.mock_request,
+            display_error_stack=False
         )
         assert self.mock_batch_request_factory.return_value.submit.called
         assert response.text == '<div>REACT!</div>'
@@ -68,6 +85,7 @@ class TestTweens:
             plugin_controller=mock.ANY,
             json_encoder=self.mock_json_encoder,
             pyramid_request=self.mock_request,
+            display_error_stack=False
         )
 
         # Access the response's body to ensure the batch request is made
@@ -89,6 +107,7 @@ class TestTweens:
             plugin_controller=mock.ANY,
             json_encoder=self.mock_json_encoder,
             pyramid_request=self.mock_request,
+            display_error_stack=False
         )
         assert not self.mock_batch_request_factory.return_value.submit.called
         assert response.text == str(self.token)

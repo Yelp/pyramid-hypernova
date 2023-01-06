@@ -17,15 +17,16 @@ BLANK_MARKUP_TEMPLATE = dedent('''
 FALLBACK_ERROR = dedent('''
     <script type="text/javascript">
         (function () {{
-            function ServerSideRenderingError(component) {{
+            function ServerSideRenderingError(component, error) {{
                 this.name = 'ServerSideRenderingError';
                 this.component = component;
+                this.cause = error;
             }}
 
             ServerSideRenderingError.prototype = Object.create(ServerSideRenderingError.prototype);
             ServerSideRenderingError.prototype.constructor = ServerSideRenderingError;
 
-            throw new ServerSideRenderingError('{component} failed to render server-side, and fell back to client-side rendering.');
+            throw new ServerSideRenderingError('{component} failed to render server-side, and fell back to client-side rendering.', {error});
         }}());
     </script>
 ''')  # noqa: ignore=E501
@@ -39,7 +40,7 @@ def encode(data, json_encoder):
     return text.replace('&', '&amp;').replace('>', '&gt;')
 
 
-def render_blank_markup(identifier, job, throw_client_error, json_encoder):
+def render_blank_markup(identifier, job, throw_client_error, json_encoder, error=None):
     """This will be called as a fallback when server-side rendering fails."""
     # Hypernova server strips out non-word characters from the name
     key = re.sub(r'\W', '', job.name)
@@ -53,6 +54,7 @@ def render_blank_markup(identifier, job, throw_client_error, json_encoder):
     if throw_client_error:
         blank_markup += FALLBACK_ERROR.format(
             component=key,
+            error=encode(error, json_encoder) if error else 'undefined',
         )
 
     return blank_markup

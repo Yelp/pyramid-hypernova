@@ -53,10 +53,14 @@ def configure_hypernova_batch(registry, request):
     )
 
     json_encoder = registry.settings.get('pyramid_hypernova.json_encoder', JSONEncoder())
+    should_display_error_stack = registry.settings.get(
+        'pyramid_hypernova.should_display_error_stack', lambda request: False
+    )
 
     return batch_request_factory(
         get_job_group_url=get_job_group_url,
         plugin_controller=plugin_controller,
         json_encoder=json_encoder,
         pyramid_request=request,
+        display_error_stack=should_display_error_stack(request),
     )

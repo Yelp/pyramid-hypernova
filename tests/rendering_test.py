@@ -1,9 +1,12 @@
 from json import JSONEncoder
 from textwrap import dedent
 
+import pytest
+
 from pyramid_hypernova.rendering import encode
 from pyramid_hypernova.rendering import render_blank_markup
 from pyramid_hypernova.rendering import RenderToken
+from pyramid_hypernova.types import HypernovaError
 from pyramid_hypernova.types import Job
 from testing.json_encoder import ComplexJSONEncoder
 
@@ -59,29 +62,41 @@ def test_render_blank_markup_with_custom_json_encoder():
     ''')
 
 
-def test_render_blank_markup_with_error():
+@pytest.mark.parametrize('error, error_markup', [
+    (
+        HypernovaError('Error', 'Error msg', ['1: Error', '2: stack']),
+        '["Error", "Error msg", ["1: Error", "2: stack"]]'
+    ),
+    (None, 'undefined'),
+])
+def test_render_blank_markup_when_throw_client_error_true(error, error_markup):
     job = Job('MyCoolComponent.js', data={'title': 'sup'}, context={})
-    markup = render_blank_markup('my-unique-token', job, True, JSONEncoder())
+    markup = render_blank_markup('my-unique-token', job, True, JSONEncoder(), error)
 
-    assert markup == dedent('''
+    expected_markup = dedent('''
         <div data-hypernova-key="MyCoolComponentjs" data-hypernova-id="my-unique-token"></div>
         <script
           type="application/json"
           data-hypernova-key="MyCoolComponentjs"
           data-hypernova-id="my-unique-token"
         ><!--{"title": "sup"}--></script>
+    ''')
 
+    expected_markup += dedent('''
         <script type="text/javascript">
-            (function () {
-                function ServerSideRenderingError(component) {
+            (function () {{
+                function ServerSideRenderingError(component, error) {{
                     this.name = 'ServerSideRenderingError';
                     this.component = component;
-                }
+                    this.cause = error;
+                }}
 
                 ServerSideRenderingError.prototype = Object.create(ServerSideRenderingError.prototype);
                 ServerSideRenderingError.prototype.constructor = ServerSideRenderingError;
 
-                throw new ServerSideRenderingError('MyCoolComponentjs failed to render server-side, and fell back to client-side rendering.');
-            }());
+                throw new ServerSideRenderingError('MyCoolComponentjs failed to render server-side, and fell back to client-side rendering.', {error_markup});
+            }}());
         </script>
-    ''')  # noqa: ignore=E501
+    ''').format(error_markup=error_markup)  # noqa: ignore=E501
+
+    assert markup == expected_markup
