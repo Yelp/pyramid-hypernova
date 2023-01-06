@@ -22,8 +22,13 @@ def create_fallback_response(jobs, throw_client_error, json_encoder, error=None,
     return {
         identifier: JobResult(
             error=error,
-            html=render_blank_markup(identifier, job, throw_client_error,
-                                     json_encoder, (display_error_stack and error)),
+            html=render_blank_markup(
+                identifier,
+                job,
+                throw_client_error,
+                json_encoder,
+                error=error if display_error_stack else None,
+            ),
             job=job,
         )
         for identifier, job in jobs.items()
@@ -124,8 +129,8 @@ class BatchRequest:
                 )
 
                 pyramid_response = create_fallback_response(
-                    jobs, True, self.json_encoder,
-                    error, self.display_error_stack)
+                    jobs, True, self.json_encoder, error, self.display_error_stack
+                )
                 self.plugin_controller.on_error(error, jobs, self.pyramid_request)
             else:
                 pyramid_response = self._parse_response(response_json)

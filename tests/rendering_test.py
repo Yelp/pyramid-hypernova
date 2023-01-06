@@ -62,14 +62,14 @@ def test_render_blank_markup_with_custom_json_encoder():
     ''')
 
 
-@pytest.mark.parametrize('error, errorMarkup', [
+@pytest.mark.parametrize('error, error_markup', [
     (
         HypernovaError('Error', 'Error msg', ['1: Error', '2: stack']),
         '["Error", "Error msg", ["1: Error", "2: stack"]]'
     ),
     (None, 'undefined'),
 ])
-def test_render_blank_markup_when_throw_client_error_true(error, errorMarkup):
+def test_render_blank_markup_when_throw_client_error_true(error, error_markup):
     job = Job('MyCoolComponent.js', data={'title': 'sup'}, context={})
     markup = render_blank_markup('my-unique-token', job, True, JSONEncoder(), error)
 
@@ -94,9 +94,9 @@ def test_render_blank_markup_when_throw_client_error_true(error, errorMarkup):
                 ServerSideRenderingError.prototype = Object.create(ServerSideRenderingError.prototype);
                 ServerSideRenderingError.prototype.constructor = ServerSideRenderingError;
 
-                throw new ServerSideRenderingError('MyCoolComponentjs failed to render server-side, and fell back to client-side rendering.', {errorMarkup});
+                throw new ServerSideRenderingError('MyCoolComponentjs failed to render server-side, and fell back to client-side rendering.', {error_markup});
             }}());
         </script>
-    ''').format(errorMarkup=errorMarkup)  # noqa: ignore=E501
+    ''').format(error_markup=error_markup)  # noqa: ignore=E501
 
     assert markup == expected_markup
