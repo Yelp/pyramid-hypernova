@@ -13,8 +13,7 @@ def create_jobs_payload(jobs):
 
 
 class HypernovaQueryError(Exception):
-    # error_data is an optional field to pass in more information about the error
-    # typically in a { name, message, stack } format
+    # error_data (obj, optional): { name, message, stack }
     def __init__(self, child_error, error_data=None):
         super().__init__(str(child_error))
         if error_data:

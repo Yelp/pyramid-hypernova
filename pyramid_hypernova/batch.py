@@ -122,7 +122,6 @@ class BatchRequest:
         try:
             response_json = query.json()
             if response_json['error']:
-                print('>>>>> no waiiittt')
                 error = HypernovaError(
                     name=response_json['error']['name'],
                     message=response_json['error']['message'],
@@ -141,11 +140,10 @@ class BatchRequest:
             # the service is unhealthy. fall back to client-side rendering
             __, __, exc_traceback = sys.exc_info()
             if hasattr(e, 'error_data'):
-                print('>>>> hit here?')
                 error = HypernovaError(
-                    name=e.error_data['name'],
-                    message=e.error_data['message'],
-                    stack=e.error_data['stack'],
+                    name=e.error_data.get('name', None),
+                    message=e.error_data.get('message', None),
+                    stack=e.error_data.get('stack', None),
                 )
             else:
                 error = HypernovaError(
