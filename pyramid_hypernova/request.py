@@ -13,8 +13,12 @@ def create_jobs_payload(jobs):
 
 
 class HypernovaQueryError(Exception):
-    def __init__(self, child_error):
+    # error_data is an optional field to pass in more information about the error
+    # typically in a { name, message, stack } format
+    def __init__(self, child_error, error_data=None):
         super().__init__(str(child_error))
+        if error_data:
+            self.error_data = error_data
 
 
 class HypernovaQuery:
@@ -73,7 +77,10 @@ class HypernovaQuery:
                 self.response.raise_for_status()
                 json = self.response.json()
             except (HTTPError, ConnectionError) as e:
-                raise HypernovaQueryError(e)
+                error_data = None
+                if hasattr(self, 'response'):
+                    error_data = self.response.json().get('error', None)
+                raise HypernovaQueryError(e, error_data)
         else:
             try:
                 result = self.response.wait()

@@ -336,7 +336,14 @@ class TestBatchRequest:
         job = Job(name='MyComponent.js', data=data[0], context={})
         token = batch_request.render('MyComponent.js', data[0])
 
-        mock_hypernova_query.return_value.json.side_effect = HypernovaQueryError('oh no')
+        mock_hypernova_query.return_value.json.side_effect = HypernovaQueryError(
+            'oh no',
+            {
+                'name': 'SadError',
+                'message': 'The saddest error',
+                'stack': 'sad stack'
+            }
+        )
         response = batch_request.submit()
 
         if batch_request.max_batch_size is None:
@@ -352,9 +359,9 @@ class TestBatchRequest:
         assert response == {
             token.identifier: JobResult(
                 error=HypernovaError(
-                    name='HypernovaQueryError',
-                    message='oh no',
-                    stack=mock.ANY,
+                    name='SadError',
+                    message='The saddest error',
+                    stack='sad stack',
                 ),
                 html=render_blank_markup(token.identifier, job, True, batch_request.json_encoder),
                 job=job,
