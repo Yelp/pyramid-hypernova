@@ -341,7 +341,7 @@ class TestBatchRequest:
             {
                 'name': 'SadError',
                 'message': 'The saddest error',
-                'stack': 'sad stack'
+                'stack': 'Sad stack'
             }
         )
         response = batch_request.submit()
