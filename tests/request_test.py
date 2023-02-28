@@ -7,6 +7,8 @@ from requests.exceptions import ConnectionError
 from requests.exceptions import HTTPError
 
 from pyramid_hypernova.request import create_jobs_payload
+from pyramid_hypernova.request import ErrorData
+from pyramid_hypernova.request import format_response_error_data
 from pyramid_hypernova.request import HypernovaQuery
 from pyramid_hypernova.request import HypernovaQueryError
 from pyramid_hypernova.types import Job
@@ -51,6 +53,23 @@ def test_create_jobs_payload():
             'context': {'foo': 'bar'},
         }
     }
+
+
+@pytest.mark.parametrize(
+    'response_error_data,expected_result',
+    [
+        (
+            {'name': 'error', 'message': 'message', 'stack': 'stack'},
+            ErrorData('error', 'message', 'stack')
+        ),
+        ({'name': None, 'message': None, 'stack': None}, None),
+        ('some string', None)
+    ]
+)
+def test_format_response_error_data(response_error_data, expected_result):
+    result = format_response_error_data(response_error_data)
+
+    assert result == expected_result
 
 
 class TestHypernovaQuery:

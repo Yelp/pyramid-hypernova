@@ -139,11 +139,13 @@ class BatchRequest:
         except (HypernovaQueryError, ValueError) as e:
             # the service is unhealthy. fall back to client-side rendering
             __, __, exc_traceback = sys.exc_info()
-            if hasattr(e, 'error_data'):
+            # We allow clients to send specific error data with their response that they may want to surface.
+            # Check if any has been propagated, otherwise proceed with generic HypernovaError
+            if e.error_data:
                 error = HypernovaError(
-                    name=e.error_data.get('name', None),
-                    message=e.error_data.get('message', None),
-                    stack=e.error_data.get('stack', None),
+                    name=e.error_data.name,
+                    message=e.error_data.message,
+                    stack=e.error_data.stack,
                 )
             else:
                 error = HypernovaError(

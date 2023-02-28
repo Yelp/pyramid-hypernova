@@ -9,6 +9,7 @@ from pyramid_hypernova.batch import create_fallback_response
 from pyramid_hypernova.batch import create_job_groups
 from pyramid_hypernova.plugins import PluginController
 from pyramid_hypernova.rendering import render_blank_markup
+from pyramid_hypernova.request import ErrorData
 from pyramid_hypernova.request import HypernovaQueryError
 from pyramid_hypernova.types import HypernovaError
 from pyramid_hypernova.types import Job
@@ -338,11 +339,7 @@ class TestBatchRequest:
 
         mock_hypernova_query.return_value.json.side_effect = HypernovaQueryError(
             'oh no',
-            {
-                'name': 'SadError',
-                'message': 'The saddest error',
-                'stack': 'Sad stack'
-            }
+            ErrorData(name='SadError', message='The saddest error', stack='Sad stack')
         )
         response = batch_request.submit()
 
@@ -361,7 +358,7 @@ class TestBatchRequest:
                 error=HypernovaError(
                     name='SadError',
                     message='The saddest error',
-                    stack='sad stack',
+                    stack='Sad stack',
                 ),
                 html=render_blank_markup(token.identifier, job, True, batch_request.json_encoder),
                 job=job,
