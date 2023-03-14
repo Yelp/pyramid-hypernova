@@ -1,8 +1,24 @@
+from collections import namedtuple
+
 import fido
 import requests
 from fido.exceptions import NetworkError
 from requests.exceptions import ConnectionError
 from requests.exceptions import HTTPError
+
+ErrorData = namedtuple('ErrorData', ['name', 'message', 'stack'], defaults=[None, None, None])
+
+
+def format_response_error_data(response_error_data):
+    if response_error_data and isinstance(response_error_data, dict):
+        name = response_error_data.get('name', None)
+        message = response_error_data.get('message', None)
+        stack = response_error_data.get('stack', None)
+
+        if name or message or stack:
+            return ErrorData(name, message, stack)
+
+    return None
 
 
 def create_jobs_payload(jobs):
@@ -13,8 +29,15 @@ def create_jobs_payload(jobs):
 
 
 class HypernovaQueryError(Exception):
-    def __init__(self, child_error):
+    """Creates a HypernovaQueryError object
+
+        :param child_error: Exception object
+        :param error_data: Optional argument of type ErrorData (namedtuple)
+    """
+
+    def __init__(self, child_error, error_data=None):
         super().__init__(str(child_error))
+        self.error_data = error_data
 
 
 class HypernovaQuery:
@@ -72,7 +95,11 @@ class HypernovaQuery:
                 )
                 self.response.raise_for_status()
                 json = self.response.json()
-            except (HTTPError, ConnectionError) as e:
+            except HTTPError as e:
+                response_error_data = self.response.json().get('error', None)
+                error_data = format_response_error_data(response_error_data)
+                raise HypernovaQueryError(e, error_data)
+            except ConnectionError as e:
                 raise HypernovaQueryError(e)
         else:
             try:

@@ -139,12 +139,20 @@ class BatchRequest:
         except (HypernovaQueryError, ValueError) as e:
             # the service is unhealthy. fall back to client-side rendering
             __, __, exc_traceback = sys.exc_info()
-
-            error = HypernovaError(
-                type(e).__name__,
-                str(e),
-                [line.rstrip('\n') for line in traceback.format_tb(exc_traceback)],
-            )
+            # We allow clients to send specific error data with their response that they may want to surface.
+            # Check if any has been propagated, otherwise proceed with generic HypernovaError
+            if e.error_data:
+                error = HypernovaError(
+                    name=e.error_data.name,
+                    message=e.error_data.message,
+                    stack=e.error_data.stack,
+                )
+            else:
+                error = HypernovaError(
+                    type(e).__name__,
+                    str(e),
+                    [line.rstrip('\n') for line in traceback.format_tb(exc_traceback)],
+                )
             self.plugin_controller.on_error(error, jobs, self.pyramid_request)
             pyramid_response = create_fallback_response(jobs, True, self.json_encoder, error, self.display_error_stack)
 
