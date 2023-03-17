@@ -141,7 +141,7 @@ class BatchRequest:
             __, __, exc_traceback = sys.exc_info()
             # We allow clients to send specific error data with their response that they may want to surface.
             # Check if any has been propagated, otherwise proceed with generic HypernovaError
-            if e.error_data:
+            if getattr(e, 'error_data', None) is not None:
                 error = HypernovaError(
                     name=e.error_data.name,
                     message=e.error_data.message,
