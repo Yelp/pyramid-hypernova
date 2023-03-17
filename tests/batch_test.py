@@ -488,7 +488,7 @@ class TestBatchRequestLifecycleMethods:
             batch_request.pyramid_request
         )
 
-    def test_calls_on_error_on_unhealthy_service(
+    def test_calls_hypernova_query_error_on_unhealthy_service(
         self,
         spy_plugin_controller,
         test_data,
@@ -513,6 +513,36 @@ class TestBatchRequestLifecycleMethods:
                 name='HypernovaQueryError',
                 message='oh no',
                 stack=['Traceback:', '  foo:'],
+            ),
+            batch_request.jobs,
+            batch_request.pyramid_request
+        )
+
+    def test_calls_value_error_on_unhealthy_service(
+        self,
+        spy_plugin_controller,
+        test_data,
+        batch_request,
+        mock_hypernova_query,
+    ):
+        data = test_data[0]
+        batch_request.render('MyComponent.js', data[0])
+
+        with mock.patch(
+            'traceback.format_tb',
+            return_value=[
+                'Traceback:\n',
+                '  bar:\n',
+            ],
+        ):
+            mock_hypernova_query.return_value.json.side_effect = ValueError('bad thing happened')
+            batch_request.submit()
+
+        spy_plugin_controller.on_error.assert_called_once_with(
+            HypernovaError(
+                name='ValueError',
+                message='bad thing happened',
+                stack=['Traceback:', '  bar:'],
             ),
             batch_request.jobs,
             batch_request.pyramid_request
