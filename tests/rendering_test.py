@@ -85,16 +85,16 @@ def test_render_blank_markup_when_throw_client_error_true(error, error_markup):
     expected_markup += dedent('''
         <script type="text/javascript">
             (function () {{
-                function ServerSideRenderingError(component, error) {{
-                    this.name = 'ServerSideRenderingError';
-                    this.component = component;
-                    this.cause = error;
+                class ServerSideRenderingError extends Error {{
+                    constructor(component, error) {{
+                        super('MyCoolComponentjs failed to render server-side, and fell back to client-side rendering.');
+                        this.name = 'ServerSideRenderingError';
+                        this.message = error.message;
+                        this.component = component;
+                        this.cause = error;
+                    }}
                 }}
-
-                ServerSideRenderingError.prototype = Object.create(ServerSideRenderingError.prototype);
-                ServerSideRenderingError.prototype.constructor = ServerSideRenderingError;
-
-                throw new ServerSideRenderingError('MyCoolComponentjs failed to render server-side, and fell back to client-side rendering.', {error_markup});
+                throw new ServerSideRenderingError('MyCoolComponentjs', {error_markup});
             }}());
         </script>
     ''').format(error_markup=error_markup)  # noqa: ignore=E501

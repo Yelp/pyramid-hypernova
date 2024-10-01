@@ -17,16 +17,16 @@ BLANK_MARKUP_TEMPLATE = dedent('''
 FALLBACK_ERROR = dedent('''
     <script type="text/javascript">
         (function () {{
-            function ServerSideRenderingError(component, error) {{
-                this.name = 'ServerSideRenderingError';
-                this.component = component;
-                this.cause = error;
+            class ServerSideRenderingError extends Error {{
+                constructor(component, error) {{
+                    super('{component} failed to render server-side, and fell back to client-side rendering.');
+                    this.name = 'ServerSideRenderingError';
+                    this.message = error.message;
+                    this.component = component;
+                    this.cause = error;
+                }}
             }}
-
-            ServerSideRenderingError.prototype = Object.create(ServerSideRenderingError.prototype);
-            ServerSideRenderingError.prototype.constructor = ServerSideRenderingError;
-
-            throw new ServerSideRenderingError('{component} failed to render server-side, and fell back to client-side rendering.', {error});
+            throw new ServerSideRenderingError('{component}', {error});
         }}());
     </script>
 ''')  # noqa: ignore=E501
