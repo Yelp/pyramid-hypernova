@@ -43,7 +43,7 @@ registry.settings.update({
 
 After:
 ```py
-def get_job_group_url():
+def get_job_group_url(job_group, pyramid_request):
     return 'https://localhost:8080/batch'
 
 registry.settings.update({
@@ -89,7 +89,7 @@ registry.settings.update({
 `get_job_group_url` will be supplied two parameters - the **job group** that pyramid_hypernova will be making a request for and the **pyramid request**:
 
 ```py
-def get_batch_url(job_group, pyramid_request): ...
+def get_job_group_url(job_group, pyramid_request): ...
 ```
 
 This will be called right before send _on every job group request_. If you're doing an expensive operation to retrieve this url, consider memoizing it.
