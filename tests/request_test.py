@@ -5,6 +5,7 @@ import pytest
 from fido.exceptions import NetworkError
 from requests.exceptions import ConnectionError
 from requests.exceptions import HTTPError
+from requests.exceptions import JSONDecodeError
 
 from pyramid_hypernova.request import create_jobs_payload
 from pyramid_hypernova.request import ErrorData
@@ -103,6 +104,24 @@ class TestHypernovaQuery:
         with pytest.raises(HypernovaQueryError) as exc_info:
             query.json()
         assert str(exc_info.value) == str(HypernovaQueryError(NetworkError('ayy lmao')))
+
+    def test_json_error_fallbacks_to_text(self, mock_fido_fetch, mock_requests_post):
+        mock_requests_post.return_value.raise_for_status.side_effect = HTTPError('ayy lmao')
+        mock_resp = mock_requests_post.return_value
+        mock_resp.json.side_effect = JSONDecodeError('Expecting value', 'body', 0)
+        mock_resp.text = 'Non-JSON Error Body'
+
+        query = HypernovaQuery(TEST_JOB_GROUP, 'google.com', JSONEncoder(), True, {})
+        query.send()
+
+        mock_fido_fetch.assert_not_called()
+        mock_requests_post.assert_not_called()
+
+        with pytest.raises(HypernovaQueryError) as exc_info:
+            query.json()
+
+        assert str(exc_info.value) == str(HypernovaQueryError(NetworkError('ayy lmao')))
+        assert exc_info.value.error_data == 'Non-JSON Error Body'
 
     def test_successful_send_asynchronous(self, mock_fido_fetch, mock_requests_post):
         mock_fido_fetch.return_value.wait.return_value.code = 200

@@ -5,6 +5,7 @@ import requests
 from fido.exceptions import NetworkError
 from requests.exceptions import ConnectionError
 from requests.exceptions import HTTPError
+from requests.exceptions import JSONDecodeError
 
 ErrorData = namedtuple('ErrorData', ['name', 'message', 'stack'], defaults=[None, None, None])
 
@@ -96,8 +97,12 @@ class HypernovaQuery:
                 self.response.raise_for_status()
                 json = self.response.json()
             except HTTPError as e:
-                response_error_data = self.response.json().get('error', None)
-                error_data = format_response_error_data(response_error_data)
+                try:
+                    response_error_data = self.response.json().get('error', None)
+                    error_data = format_response_error_data(response_error_data)
+                except JSONDecodeError:
+                    error_data = self.response.text or 'No response data'
+
                 raise HypernovaQueryError(e, error_data)
             except ConnectionError as e:
                 raise HypernovaQueryError(e)
