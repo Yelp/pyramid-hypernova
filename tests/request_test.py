@@ -103,7 +103,7 @@ class TestHypernovaQuery:
 
         with pytest.raises(HypernovaQueryError) as exc_info:
             query.json()
-        assert str(exc_info.value) == str(HypernovaQueryError(NetworkError('ayy lmao')))
+        assert str(exc_info.value) == str(HypernovaQueryError(HTTPError('ayy lmao')))
 
     def test_json_error_fallbacks_to_text(self, mock_fido_fetch, mock_requests_post):
         mock_requests_post.return_value.raise_for_status.side_effect = HTTPError('ayy lmao')
@@ -120,7 +120,12 @@ class TestHypernovaQuery:
         with pytest.raises(HypernovaQueryError) as exc_info:
             query.json()
 
-        assert str(exc_info.value) == str(HypernovaQueryError(NetworkError('ayy lmao')))
+        mock_requests_post.assert_called_once_with(
+            url='google.com',
+            headers={'Content-Type': 'application/json'},
+            data=mock.ANY,
+        )
+        assert str(exc_info.value) == str(HypernovaQueryError(HTTPError('ayy lmao')))
         assert exc_info.value.error_data == 'Non-JSON Error Body'
 
     def test_successful_send_asynchronous(self, mock_fido_fetch, mock_requests_post):
