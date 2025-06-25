@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [10.0.1] - 2025-06-25
 
 ### Changed
-Fix Github Workflow yaml by putting python-version in quotes ("3.10" reads as "3.1" without them)
+Fix GitHub Workflow yaml by putting python-version in quotes ("3.10" reads as "3.1" without them)
 
 ## [10.0.0] - 2025-06-25
 
