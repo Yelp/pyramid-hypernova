@@ -12,10 +12,10 @@ setup(
     description="A Python client for Airbnb's Hypernova server, for use with the Pyramid web framework.",
     classifiers=[
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.10',
         'License :: OSI Approved :: MIT License',
     ],
-    python_requires='>=3.7',
+    python_requires='>=3.10',
     install_requires=[
         'fido',
         'more-itertools',
