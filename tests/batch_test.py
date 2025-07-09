@@ -365,6 +365,84 @@ class TestBatchRequest:
             ),
         }
 
+    def test_batch_request_with_unhealthy_service_and_none_error_data(
+        self,
+        spy_plugin_controller,
+        test_data,
+        batch_request,
+        mock_hypernova_query,
+    ):
+        data = test_data[0]
+        job = Job(name='MyComponent.js', data=data[0], context={})
+        token = batch_request.render('MyComponent.js', data[0])
+
+        mock_hypernova_query.return_value.json.side_effect = HypernovaQueryError(
+            'oh no',
+            None,
+        )
+        response = batch_request.submit()
+
+        if batch_request.max_batch_size is None:
+            assert mock_hypernova_query.call_count == 1
+        else:
+            # Division (rounded-up) up to get total number of calls
+            jobs_count = len(batch_request.jobs)
+            max_batch_size = batch_request.max_batch_size
+            batch_count = (jobs_count + (max_batch_size - 1)) // max_batch_size
+            assert mock_hypernova_query.call_count == batch_count
+            mock_hypernova_query.assert_called_with(mock.ANY, mock.ANY, mock.ANY, batch_count == 1, {})
+
+        assert response == {
+            token.identifier: JobResult(
+                error=HypernovaError(
+                    name='HypernovaQueryError',
+                    message='oh no',
+                    stack=mock.ANY,
+                ),
+                html=render_blank_markup(token.identifier, job, True, batch_request.json_encoder),
+                job=job,
+            ),
+        }
+
+    def test_batch_request_with_unhealthy_service_and_other_type_error_data(
+        self,
+        spy_plugin_controller,
+        test_data,
+        batch_request,
+        mock_hypernova_query,
+    ):
+        data = test_data[0]
+        job = Job(name='MyComponent.js', data=data[0], context={})
+        token = batch_request.render('MyComponent.js', data[0])
+
+        mock_hypernova_query.return_value.json.side_effect = HypernovaQueryError(
+            'oh no',
+            'i should not be a string',
+        )
+        response = batch_request.submit()
+
+        if batch_request.max_batch_size is None:
+            assert mock_hypernova_query.call_count == 1
+        else:
+            # Division (rounded-up) up to get total number of calls
+            jobs_count = len(batch_request.jobs)
+            max_batch_size = batch_request.max_batch_size
+            batch_count = (jobs_count + (max_batch_size - 1)) // max_batch_size
+            assert mock_hypernova_query.call_count == batch_count
+            mock_hypernova_query.assert_called_with(mock.ANY, mock.ANY, mock.ANY, batch_count == 1, {})
+
+        assert response == {
+            token.identifier: JobResult(
+                error=HypernovaError(
+                    name='HypernovaQueryError',
+                    message='oh no',
+                    stack=mock.ANY,
+                ),
+                html=render_blank_markup(token.identifier, job, True, batch_request.json_encoder),
+                job=job,
+            ),
+        }
+
 
 class TestBatchRequestLifecycleMethods:
     """Test that BatchRequest calls plugin lifecycle methods at the

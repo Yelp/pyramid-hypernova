@@ -7,6 +7,7 @@ from more_itertools import chunked
 
 from pyramid_hypernova.rendering import render_blank_markup
 from pyramid_hypernova.rendering import RenderToken
+from pyramid_hypernova.request import ErrorData
 from pyramid_hypernova.request import HypernovaQuery
 from pyramid_hypernova.request import HypernovaQueryError
 from pyramid_hypernova.types import HypernovaError
@@ -141,7 +142,7 @@ class BatchRequest:
             __, __, exc_traceback = sys.exc_info()
             # We allow clients to send specific error data with their response that they may want to surface.
             # Check if any has been propagated, otherwise proceed with generic HypernovaError
-            if getattr(e, 'error_data', None) is not None:
+            if isinstance(getattr(e, 'error_data', None), ErrorData):
                 error = HypernovaError(
                     name=e.error_data.name,
                     message=e.error_data.message,
