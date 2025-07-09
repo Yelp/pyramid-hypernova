@@ -101,7 +101,9 @@ class HypernovaQuery:
                     response_error_data = self.response.json().get('error', None)
                     error_data = format_response_error_data(response_error_data)
                 except JSONDecodeError:
-                    error_data = self.response.text or 'No response data'
+                    error_data = format_response_error_data({
+                        'message': self.response.text or 'SSRS did not return any content',
+                    })
 
                 raise HypernovaQueryError(e, error_data)
             except ConnectionError as e:
