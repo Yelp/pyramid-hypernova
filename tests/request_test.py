@@ -127,6 +127,7 @@ class TestHypernovaQuery:
         )
         assert str(exc_info.value) == str(HypernovaQueryError(HTTPError('ayy lmao')))
         assert isinstance(exc_info.value.error_data, ErrorData)
+        assert exc_info.value.error_data.message == 'Non-JSON Error Body'
 
     def test_successful_send_asynchronous(self, mock_fido_fetch, mock_requests_post):
         mock_fido_fetch.return_value.wait.return_value.code = 200
