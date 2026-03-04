@@ -21,7 +21,7 @@ FALLBACK_ERROR = dedent('''
                 constructor(component, error) {{
                     super('{component} failed to render server-side, and fell back to client-side rendering.');
                     this.name = 'ServerSideRenderingError';
-                    this.message = error.message;
+                    this.message = error ? error.message : undefined;
                     this.component = component;
                     this.cause = error;
                 }}

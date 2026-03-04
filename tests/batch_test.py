@@ -277,7 +277,10 @@ class TestBatchRequest:
                     message='we goofed',
                     stack=['line 1', 'line 2'],
                 ),
-                html=render_blank_markup(token_2.identifier, job_2, True, batch_request.json_encoder),
+                html=render_blank_markup(
+                    token_2.identifier, job_2, True, batch_request.json_encoder,
+                    error=HypernovaError(name='SomeError', message='we goofed', stack=['line 1', 'line 2']),
+                ),
                 job=job_2,
             )
         }
