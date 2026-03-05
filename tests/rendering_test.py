@@ -89,7 +89,7 @@ def test_render_blank_markup_when_throw_client_error_true(error, error_markup):
                     constructor(component, error) {{
                         super('MyCoolComponentjs failed to render server-side, and fell back to client-side rendering.');
                         this.name = 'ServerSideRenderingError';
-                        this.message = error.message;
+                        this.message = error ? error.message : undefined;
                         this.component = component;
                         this.cause = error;
                     }}

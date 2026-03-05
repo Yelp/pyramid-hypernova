@@ -102,7 +102,7 @@ class BatchRequest:
 
             html = result['html']
             if not html:
-                html = render_blank_markup(identifier, job, True, self.json_encoder)
+                html = render_blank_markup(identifier, job, True, self.json_encoder, error=error)
 
             response[identifier] = JobResult(error=error, html=html, job=job)
         return response
