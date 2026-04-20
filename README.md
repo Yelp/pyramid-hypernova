@@ -27,10 +27,10 @@ Usage
 In your service's Pyramid configuration (e.g. `webapp.py`), you can configure the Pyramid tween like so:
 
 ```python
-def get_batch_url():
+def get_job_group_url(job_group, pyramid_request):
     return 'https://localhost:8080/batch'
 
-config.registry.settings['pyramid_hypernova.get_batch_url'] = get_batch_url
+config.registry.settings['pyramid_hypernova.get_job_group_url'] = get_job_group_url
 config.add_tween('pyramid_hypernova.tweens.hypernova_tween_factory')
 ```
 
