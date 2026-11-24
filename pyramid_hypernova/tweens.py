@@ -6,7 +6,11 @@ from pyramid_hypernova.token_replacement import hypernova_token_replacement
 
 
 class _ClosingMap(map):
-    """Map response chunks without losing the original WSGI close hook."""
+    """Preserve the original WSGI iterable's close hook when mapping chunks.
+
+    Like ``werkzeug.wsgi.ClosingIterator``, but without adding a Werkzeug dependency.
+    https://github.com/pallets/werkzeug/blob/3.1.3/src/werkzeug/wsgi.py#L192-L238
+    """
 
     def __init__(self, mapper, app_iter):
         close = getattr(app_iter, 'close', None)
