@@ -5,6 +5,19 @@ from pyramid_hypernova.plugins import PluginController
 from pyramid_hypernova.token_replacement import hypernova_token_replacement
 
 
+class _ClosingMap(map):
+    """Preserve the original WSGI iterable's close hook when mapping chunks.
+
+    Like ``werkzeug.wsgi.ClosingIterator``, but without adding a Werkzeug dependency.
+    https://github.com/pallets/werkzeug/blob/3.1.3/src/werkzeug/wsgi.py#L192-L238
+    """
+
+    def __init__(self, mapper, app_iter):
+        close = getattr(app_iter, 'close', None)
+        if close is not None:
+            self.close = close
+
+
 def hypernova_tween_factory(handler, registry):
     registry = registry
 
@@ -35,7 +48,7 @@ def hypernova_tween_factory(handler, registry):
         #
         # In cases where app_iter is a list (the default), this should work
         # equivalently
-        response.app_iter = map(lambda chunk: hypernova_mapper(request, chunk), response.app_iter)
+        response.app_iter = _ClosingMap(lambda chunk: hypernova_mapper(request, chunk), response.app_iter)
         return response
 
     return hypernova_tween

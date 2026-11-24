@@ -1,11 +1,32 @@
+from io import BytesIO
+from io import StringIO
 from unittest import mock
+from wsgiref.handlers import SimpleHandler
 
 import pytest
+from pyramid.registry import Registry
+from pyramid.request import Request
 from pyramid.response import Response
 
 from pyramid_hypernova.rendering import RenderToken
 from pyramid_hypernova.tweens import hypernova_tween_factory
 from pyramid_hypernova.types import JobResult
+
+
+def test_wsgi_closes_response_iterable_before_first_chunk():
+    app_iter = BytesIO(b'body')
+    request = Request.blank('/', method='HEAD')
+    registry = Registry()
+    registry.settings = {'pyramid_hypernova.get_job_group_url': lambda jobs: None}
+    tween = hypernova_tween_factory(lambda request: Response(app_iter=app_iter), registry)
+
+    response = tween(request)
+    assert not app_iter.closed
+    errors = StringIO()
+    SimpleHandler(BytesIO(), BytesIO(), errors, request.environ).run(response)
+
+    assert not errors.getvalue()
+    assert app_iter.closed
 
 
 class TestTweens:
